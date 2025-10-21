@@ -34,6 +34,16 @@ Cleans up after you're done:
 
 ## Installation
 
+### Homebrew (Recommended)
+
+```bash
+brew install bshakr/ko/ko
+```
+
+### Manual Installation
+
+If you prefer not to use Homebrew:
+
 1. Clone or download this repository
 2. Add the script to your PATH or create an alias:
 
@@ -94,6 +104,7 @@ This will:
 ```bash
 ko new <worktree-name>      # Create a new worktree and tmux session
 ko cleanup <worktree-name>  # Close tmux session and remove worktree
+ko version                  # Show version information
 ko help                     # Show help message
 ```
 

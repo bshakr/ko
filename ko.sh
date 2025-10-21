@@ -1,19 +1,28 @@
 #!/bin/bash
 
+VERSION="0.1.0"
+
 # Display usage information
 usage() {
     cat << EOF
-ko - Git Worktree tmux Automation
+ko - Git Worktree tmux Automation v${VERSION}
 
 Usage:
   ko new <worktree-name>      Create a new worktree and tmux session
   ko cleanup <worktree-name>  Close tmux session and remove worktree
   ko help                     Show this help message
+  ko version                  Show version information
 
 Examples:
   ko new feature-auth
   ko cleanup feature-auth
 EOF
+    exit 0
+}
+
+# Display version information
+version() {
+    echo "ko version ${VERSION}"
     exit 0
 }
 
@@ -179,6 +188,9 @@ main() {
             ;;
         cleanup)
             cmd_cleanup "$@"
+            ;;
+        version|--version|-v)
+            version
             ;;
         help|--help|-h|"")
             usage

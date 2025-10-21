@@ -1,0 +1,16 @@
+# Worktree directory
+.ko/
+
+# macOS
+.DS_Store
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+.claude/
+
+# Temporary files
+*.tmp
