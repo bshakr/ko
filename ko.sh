@@ -73,8 +73,11 @@ cmd_new() {
 
     local WORKTREE_PATH="$CURRENT_DIR/.ko/$WORKTREE_NAME"
 
-    # Create new tmux window with the worktree name
-    tmux new-window -n "$WORKTREE_NAME" -c "$WORKTREE_PATH"
+    # Get the git repository name
+    local REPO_NAME=$(basename $(git rev-parse --show-toplevel))
+
+    # Create new tmux window with format: repo|worktree
+    tmux new-window -n "${REPO_NAME}|${WORKTREE_NAME}" -c "$WORKTREE_PATH"
 
     # Split window into 4 panes
     # First split vertically (left and right)
@@ -150,8 +153,8 @@ cmd_cleanup() {
     if command -v tmux &> /dev/null; then
         # Check if we're in a tmux session
         if [ -n "$TMUX" ]; then
-            # Find the window with the worktree name
-            local WINDOW_INDEX=$(tmux list-windows -F "#{window_index}:#{window_name}" | grep ":${WORKTREE_NAME}$" | cut -d: -f1)
+            # Find the window with the worktree name (format: repo|worktree)
+            local WINDOW_INDEX=$(tmux list-windows -F "#{window_index}:#{window_name}" | grep ":.*|${WORKTREE_NAME}$" | cut -d: -f1)
 
             if [ -n "$WINDOW_INDEX" ]; then
                 echo "Closing tmux window: $WORKTREE_NAME"
