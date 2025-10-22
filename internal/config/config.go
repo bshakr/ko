@@ -13,24 +13,15 @@ import (
 
 // Config represents the ko configuration
 type Config struct {
-	Editor      string   `json:"editor"`
-	SetupScript string   `json:"setup_script"`
-	DevScript   string   `json:"dev_script"`
+	SetupScript  string   `json:"setup_script"`
 	PaneCommands []string `json:"pane_commands"`
 }
 
 // DefaultConfig returns a configuration with default values
 func DefaultConfig() *Config {
 	return &Config{
-		Editor:      "vim",
-		SetupScript: "./bin/setup",
-		DevScript:   "./bin/dev",
-		PaneCommands: []string{
-			"vim",
-			"./bin/setup",
-			"./bin/dev",
-			"claude",
-		},
+		SetupScript:  "./bin/setup",
+		PaneCommands: []string{},
 	}
 }
 
@@ -123,6 +114,7 @@ func (c *Config) Save() error {
 }
 
 // Setup runs an interactive setup to create a .koconfig file
+// Note: This is a simple fallback. Use 'ko init' for the full interactive wizard.
 func Setup() error {
 	reader := bufio.NewReader(os.Stdin)
 
@@ -132,14 +124,6 @@ func Setup() error {
 
 	config := DefaultConfig()
 
-	// Ask for editor
-	fmt.Printf("Editor (default: %s): ", config.Editor)
-	editor, _ := reader.ReadString('\n')
-	editor = strings.TrimSpace(editor)
-	if editor != "" {
-		config.Editor = editor
-	}
-
 	// Ask for setup script
 	fmt.Printf("Setup script (default: %s): ", config.SetupScript)
 	setupScript, _ := reader.ReadString('\n')
@@ -148,37 +132,21 @@ func Setup() error {
 		config.SetupScript = setupScript
 	}
 
-	// Ask for dev script
-	fmt.Printf("Dev script (default: %s): ", config.DevScript)
-	devScript, _ := reader.ReadString('\n')
-	devScript = strings.TrimSpace(devScript)
-	if devScript != "" {
-		config.DevScript = devScript
-	}
-
 	// Ask for pane commands
 	fmt.Println()
-	fmt.Println("Tmux pane commands (press Enter on empty line to finish):")
-	fmt.Println("Current defaults:", config.PaneCommands)
-	fmt.Print("Use defaults? (y/n): ")
-	useDefaults, _ := reader.ReadString('\n')
-	useDefaults = strings.TrimSpace(strings.ToLower(useDefaults))
-
-	if useDefaults != "y" && useDefaults != "yes" {
-		var paneCommands []string
-		fmt.Println("Enter commands (one per line, empty line to finish):")
-		for {
-			fmt.Print("> ")
-			cmd, _ := reader.ReadString('\n')
-			cmd = strings.TrimSpace(cmd)
-			if cmd == "" {
-				break
-			}
-			paneCommands = append(paneCommands, cmd)
+	fmt.Println("Pane commands (one per line, empty line to finish):")
+	var paneCommands []string
+	for {
+		fmt.Print("> ")
+		cmd, _ := reader.ReadString('\n')
+		cmd = strings.TrimSpace(cmd)
+		if cmd == "" {
+			break
 		}
-		if len(paneCommands) > 0 {
-			config.PaneCommands = paneCommands
-		}
+		paneCommands = append(paneCommands, cmd)
+	}
+	if len(paneCommands) > 0 {
+		config.PaneCommands = paneCommands
 	}
 
 	// Save the configuration

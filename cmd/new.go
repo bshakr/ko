@@ -18,11 +18,8 @@ import (
 var newCmd = &cobra.Command{
 	Use:   "new <worktree-name>",
 	Short: "Create a new worktree and tmux session",
-	Long: `Create a new git worktree and automatically set up a tmux session with:
-  - Top-left: vim
-  - Bottom-left: setup script
-  - Top-right: dev server (waits for setup)
-  - Bottom-right: claude`,
+	Long: `Create a new git worktree and automatically set up a tmux session.
+The session will have one pane for the setup script and additional panes for configured commands.`,
 	Args: cobra.ExactArgs(1),
 	RunE: runNew,
 }
@@ -87,15 +84,11 @@ func runNew(cmd *cobra.Command, args []string) error {
 	}
 
 	// Check if setup script exists (relative to main repo)
-	setupPath := filepath.Join(mainRepoRoot, cfg.SetupScript)
-	if _, err := os.Stat(setupPath); os.IsNotExist(err) {
-		return fmt.Errorf("%s not found\nPlease create a setup script at %s", cfg.SetupScript, cfg.SetupScript)
-	}
-
-	// Check if dev script exists (relative to main repo)
-	devPath := filepath.Join(mainRepoRoot, cfg.DevScript)
-	if _, err := os.Stat(devPath); os.IsNotExist(err) {
-		return fmt.Errorf("%s not found\nPlease create a dev script at %s", cfg.DevScript, cfg.DevScript)
+	if cfg.SetupScript != "" {
+		setupPath := filepath.Join(mainRepoRoot, cfg.SetupScript)
+		if _, err := os.Stat(setupPath); os.IsNotExist(err) {
+			return fmt.Errorf("%s not found\nPlease create a setup script at %s", cfg.SetupScript, cfg.SetupScript)
+		}
 	}
 
 	// Create .ko directory if it doesn't exist

@@ -56,13 +56,15 @@ func runConfig(cmd *cobra.Command, args []string) error {
 
 	// Create a styled box for config values
 	var content string
-	content += styles.RenderKeyValue("Editor", cfg.Editor) + "\n"
 	content += styles.RenderKeyValue("Setup Script", cfg.SetupScript) + "\n"
-	content += styles.RenderKeyValue("Dev Script", cfg.DevScript) + "\n"
 	content += "\n"
-	content += styles.Key.Render("Pane Commands:") + "\n"
-	for i, cmdStr := range cfg.PaneCommands {
-		content += fmt.Sprintf("  %d. %s\n", i+1, styles.Code.Render(cmdStr))
+	if len(cfg.PaneCommands) > 0 {
+		content += styles.Key.Render("Pane Commands:") + "\n"
+		for i, cmdStr := range cfg.PaneCommands {
+			content += fmt.Sprintf("  %d. %s\n", i+1, styles.Key.Render(cmdStr))
+		}
+	} else {
+		content += styles.Muted.Render("No pane commands configured") + "\n"
 	}
 
 	box := lipgloss.NewStyle().

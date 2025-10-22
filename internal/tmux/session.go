@@ -59,40 +59,32 @@ func CreateSessionWithContext(ctx context.Context, repoName, worktreeName, workt
 		return err
 	}
 
-	// Create a unique marker file path for setup completion
-	setupMarker := fmt.Sprintf("/tmp/ko-setup-done-%s-%d", worktreeName, os.Getpid())
-
-	// Run commands in each pane using config values
-	// Get commands from config (use defaults if not enough specified)
-	paneCommands := cfg.PaneCommands
-	if len(paneCommands) < 4 {
-		// Fallback to defaults if not enough commands specified
-		defaults := []string{cfg.Editor, cfg.SetupScript, cfg.DevScript, "claude"}
-		for i := len(paneCommands); i < 4; i++ {
-			paneCommands = append(paneCommands, defaults[i])
+	// Pane 0 (top-left): Setup script
+	if cfg.SetupScript != "" {
+		if err := sendKeysWithContext(ctx, 0, cfg.SetupScript); err != nil {
+			return err
 		}
 	}
 
-	// Pane 0 (top-left): from config
-	if err := sendKeysWithContext(ctx, 0, paneCommands[0]); err != nil {
-		return err
+	// Pane 1 (bottom-left): First pane command (if configured)
+	if len(cfg.PaneCommands) > 0 {
+		if err := sendKeysWithContext(ctx, 1, cfg.PaneCommands[0]); err != nil {
+			return err
+		}
 	}
 
-	// Pane 1 (bottom-left): setup script with marker
-	setupCmd := fmt.Sprintf("%s && touch %s", cfg.SetupScript, setupMarker)
-	if err := sendKeysWithContext(ctx, 1, setupCmd); err != nil {
-		return err
+	// Pane 2 (top-right): Second pane command (if configured)
+	if len(cfg.PaneCommands) > 1 {
+		if err := sendKeysWithContext(ctx, 2, cfg.PaneCommands[1]); err != nil {
+			return err
+		}
 	}
 
-	// Pane 2 (top-right): wait for setup, then run dev script
-	waitCmd := fmt.Sprintf("echo 'Waiting for setup to complete...'; while [ ! -f %s ]; do sleep 1; done; rm %s; %s", setupMarker, setupMarker, cfg.DevScript)
-	if err := sendKeysWithContext(ctx, 2, waitCmd); err != nil {
-		return err
-	}
-
-	// Pane 3 (bottom-right): from config
-	if err := sendKeysWithContext(ctx, 3, paneCommands[3]); err != nil {
-		return err
+	// Pane 3 (bottom-right): Third pane command (if configured)
+	if len(cfg.PaneCommands) > 2 {
+		if err := sendKeysWithContext(ctx, 3, cfg.PaneCommands[2]); err != nil {
+			return err
+		}
 	}
 
 	// Focus on the first pane
