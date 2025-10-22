@@ -15,11 +15,14 @@ import (
 )
 
 var cleanupCmd = &cobra.Command{
-	Use:   "cleanup <worktree-name>",
+	Use:   "cleanup [worktree-name]",
 	Short: "Close tmux session and remove worktree",
-	Long:  `Closes the associated tmux window and removes the git worktree.`,
-	Args:  cobra.ExactArgs(1),
-	RunE:  runCleanup,
+	Long: `Closes the associated tmux window and removes the git worktree.
+
+If no worktree name is provided and you're currently in a worktree,
+it will automatically clean up the current worktree.`,
+	Args: cobra.MaximumNArgs(1),
+	RunE: runCleanup,
 }
 
 func init() {
@@ -27,7 +30,37 @@ func init() {
 }
 
 func runCleanup(cmd *cobra.Command, args []string) error {
-	worktreeName := args[0]
+	var worktreeName string
+
+	// If no argument provided, try to detect current worktree
+	if len(args) == 0 {
+		if !git.IsGitRepo() {
+			return fmt.Errorf("not in a git repository\nPlease run this command from within a git repository or specify a worktree name")
+		}
+
+		if !git.IsInWorktree() {
+			return fmt.Errorf("not in a worktree\nPlease specify a worktree name or run from within a worktree")
+		}
+
+		// Get the current worktree path and extract the name
+		currentPath, err := git.GetCurrentWorktreePath()
+		if err != nil {
+			return fmt.Errorf("failed to get current worktree: %w", err)
+		}
+
+		// Extract worktree name from path (should be .ko/<name>)
+		worktreeName = filepath.Base(currentPath)
+
+		// Verify this is actually a .ko worktree by checking if parent is .ko
+		parentDir := filepath.Base(filepath.Dir(currentPath))
+		if parentDir != ".ko" {
+			return fmt.Errorf("current worktree is not a ko worktree (not in .ko directory)\nPlease specify a worktree name explicitly")
+		}
+
+		fmt.Printf("Detected current worktree: %s\n", worktreeName)
+	} else {
+		worktreeName = args[0]
+	}
 
 	// Validate worktree name for security
 	if err := validation.ValidateWorktreeName(worktreeName); err != nil {

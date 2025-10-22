@@ -53,8 +53,8 @@ func TestCleanupCommandStructure(t *testing.T) {
 		t.Fatal("cleanupCmd is nil")
 	}
 
-	if cleanupCmd.Use != "cleanup <worktree-name>" {
-		t.Errorf("Expected Use 'cleanup <worktree-name>', got %q", cleanupCmd.Use)
+	if cleanupCmd.Use != "cleanup [worktree-name]" {
+		t.Errorf("Expected Use 'cleanup [worktree-name]', got %q", cleanupCmd.Use)
 	}
 
 	if cleanupCmd.Short == "" {
@@ -68,4 +68,18 @@ func TestCleanupCommandStructure(t *testing.T) {
 	if cleanupCmd.RunE == nil {
 		t.Error("RunE is nil")
 	}
+}
+
+// TestCleanupAutoDetection tests that cleanup can auto-detect current worktree
+func TestCleanupAutoDetection(t *testing.T) {
+	// This is more of a documentation test showing the expected behavior
+	// Actual behavior testing requires being in a worktree which we can't
+	// guarantee in unit tests
+
+	// When no args provided and in a worktree -> should detect and cleanup
+	// When no args provided and NOT in a worktree -> should error
+	// When arg provided -> should use provided name
+
+	t.Log("Cleanup command supports auto-detection of current worktree")
+	t.Log("Run 'ko cleanup' from within a worktree to test this feature")
 }
