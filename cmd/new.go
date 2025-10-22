@@ -1,13 +1,17 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	"github.com/bshakr/ko/internal/config"
 	"github.com/bshakr/ko/internal/git"
 	"github.com/bshakr/ko/internal/tmux"
+	"github.com/bshakr/ko/internal/validation"
 	"github.com/spf13/cobra"
 )
 
@@ -29,6 +33,24 @@ func init() {
 
 func runNew(cmd *cobra.Command, args []string) error {
 	worktreeName := args[0]
+
+	// Validate worktree name for security
+	if err := validation.ValidateWorktreeName(worktreeName); err != nil {
+		return fmt.Errorf("invalid worktree name: %w", err)
+	}
+
+	// Set up context with cancellation for long-running operations
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Handle interrupt signals (Ctrl+C)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		fmt.Println("\nOperation cancelled by user")
+		cancel()
+	}()
 
 	// Check if we're in a git repository
 	if !git.IsGitRepo() {
@@ -88,9 +110,9 @@ func runNew(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("worktree .ko/%s already exists", worktreeName)
 	}
 
-	// Create git worktree
+	// Create git worktree with context
 	fmt.Printf("Creating git worktree: .ko/%s\n", worktreeName)
-	if err := git.CreateWorktree(worktreePath); err != nil {
+	if err := git.CreateWorktreeWithContext(ctx, worktreePath); err != nil {
 		return fmt.Errorf("failed to create worktree: %w", err)
 	}
 
@@ -100,8 +122,8 @@ func runNew(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to get repository name: %w", err)
 	}
 
-	// Create tmux session with config
-	if err := tmux.CreateSession(repoName, worktreeName, worktreePath, cfg); err != nil {
+	// Create tmux session with config and context
+	if err := tmux.CreateSessionWithContext(ctx, repoName, worktreeName, worktreePath, cfg); err != nil {
 		return fmt.Errorf("failed to create tmux session: %w", err)
 	}
 

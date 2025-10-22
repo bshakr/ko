@@ -1,12 +1,16 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	"github.com/bshakr/ko/internal/git"
 	"github.com/bshakr/ko/internal/tmux"
+	"github.com/bshakr/ko/internal/validation"
 	"github.com/spf13/cobra"
 )
 
@@ -24,6 +28,24 @@ func init() {
 
 func runCleanup(cmd *cobra.Command, args []string) error {
 	worktreeName := args[0]
+
+	// Validate worktree name for security
+	if err := validation.ValidateWorktreeName(worktreeName); err != nil {
+		return fmt.Errorf("invalid worktree name: %w", err)
+	}
+
+	// Set up context with cancellation for long-running operations
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Handle interrupt signals (Ctrl+C)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		fmt.Println("\nOperation cancelled by user")
+		cancel()
+	}()
 
 	// Get current directory
 	currentDir, err := os.Getwd()
@@ -45,10 +67,10 @@ func runCleanup(cmd *cobra.Command, args []string) error {
 		worktreeExists = false
 	}
 
-	// Remove the git worktree
+	// Remove the git worktree with context
 	if worktreeExists {
 		fmt.Printf("Removing git worktree: .ko/%s\n", worktreeName)
-		if err := git.RemoveWorktree(worktreePath); err != nil {
+		if err := git.RemoveWorktreeWithContext(ctx, worktreePath); err != nil {
 			fmt.Printf("Warning: Failed to remove worktree automatically: %v\n", err)
 			fmt.Printf("You may need to run: git worktree remove .ko/%s --force\n", worktreeName)
 			fmt.Println("Or manually delete uncommitted changes first")
