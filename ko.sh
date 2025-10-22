@@ -131,25 +131,7 @@ cmd_cleanup() {
         exit 1
     fi
 
-    # Check if worktree exists
-    if [ ! -d ".ko/$WORKTREE_NAME" ]; then
-        echo "Warning: Worktree .ko/$WORKTREE_NAME not found"
-        echo "Will attempt to clean up tmux window only"
-    else
-        # Remove the git worktree
-        echo "Removing git worktree: .ko/$WORKTREE_NAME"
-        git worktree remove ".ko/$WORKTREE_NAME"
-
-        if [ $? -ne 0 ]; then
-            echo "Warning: Failed to remove worktree automatically"
-            echo "You may need to run: git worktree remove .ko/$WORKTREE_NAME --force"
-            echo "Or manually delete uncommitted changes first"
-        else
-            echo "Worktree removed successfully"
-        fi
-    fi
-
-    # Find and kill the tmux window
+    # Find and kill the tmux window first (before removing worktree)
     if command -v tmux &> /dev/null; then
         # Check if we're in a tmux session
         if [ -n "$TMUX" ]; then
@@ -157,14 +139,47 @@ cmd_cleanup() {
             local WINDOW_INDEX=$(tmux list-windows -F "#{window_index}:#{window_name}" | grep ":.*|${WORKTREE_NAME}$" | cut -d: -f1)
 
             if [ -n "$WINDOW_INDEX" ]; then
+                local CURRENT_WINDOW=$(tmux display-message -p '#I')
+
+                # If we're currently in the window we want to close, switch to another window first
+                if [ "$CURRENT_WINDOW" = "$WINDOW_INDEX" ]; then
+                    # Try to switch to the previous window
+                    tmux select-window -t :- 2>/dev/null || tmux select-window -t :+ 2>/dev/null
+                fi
+
                 echo "Closing tmux window: $WORKTREE_NAME"
-                tmux kill-window -t "$WINDOW_INDEX"
+                # Suppress errors in case panes are already closed
+                tmux kill-window -t "$WINDOW_INDEX" 2>/dev/null
                 echo "Tmux window closed"
             else
                 echo "No tmux window found with name: $WORKTREE_NAME"
             fi
         else
             echo "Not in a tmux session, skipping tmux cleanup"
+        fi
+    fi
+
+    # Check if worktree exists
+    if [ ! -d ".ko/$WORKTREE_NAME" ]; then
+        echo "Warning: Worktree .ko/$WORKTREE_NAME not found"
+    else
+        # Remove the git worktree
+        echo "Removing git worktree: .ko/$WORKTREE_NAME"
+        git worktree remove ".ko/$WORKTREE_NAME" 2>/dev/null
+
+        if [ $? -ne 0 ]; then
+            echo "Worktree has uncommitted changes, forcing removal..."
+            git worktree remove ".ko/$WORKTREE_NAME" --force 2>/dev/null
+
+            if [ $? -ne 0 ]; then
+                echo "Warning: Failed to remove worktree"
+                echo "Please check: git worktree list"
+                echo "You may need to manually run: git worktree remove .ko/$WORKTREE_NAME --force"
+            else
+                echo "Worktree forcefully removed"
+            fi
+        else
+            echo "Worktree removed successfully"
         fi
     fi
 
