@@ -1,6 +1,6 @@
 # ko - Git Worktree tmux Automation
 
-`ko` is a tmux automation script that creates git worktrees and sets up a complete development environment with a single command.
+`ko` is a CLI tool written in Go that creates git worktrees and sets up a complete development environment with a single command.
 
 ## What it does
 
@@ -34,18 +34,38 @@ Cleans up after you're done:
 
 ## Installation
 
-1. Clone or download this repository
-2. Add the script to your PATH or create an alias:
+### Quick Install (recommended)
 
 ```bash
-# Option 1: Add to PATH
-export PATH="$HOME/code/ko:$PATH"
-
-# Option 2: Create an alias
-alias ko="$HOME/code/ko/ko.sh"
+make install
 ```
 
-Add the above line to your `~/.bashrc`, `~/.zshrc`, or equivalent shell configuration file.
+This will build the binary and install it to `/usr/local/bin`.
+
+### Manual Installation
+
+```bash
+# Build the binary
+go build -o ko
+
+# Move to a directory in your PATH
+sudo mv ko /usr/local/bin/ko
+sudo chmod +x /usr/local/bin/ko
+```
+
+### Building from source
+
+```bash
+# Clone the repository
+git clone https://github.com/bshakr/ko.git
+cd ko
+
+# Build
+make build
+
+# Or use go directly
+go build -o ko
+```
 
 ## Usage
 
@@ -94,8 +114,20 @@ This will:
 ```bash
 ko new <worktree-name>      # Create a new worktree and tmux session
 ko cleanup <worktree-name>  # Close tmux session and remove worktree
+ko list                     # List all ko worktrees
+ko init                     # Interactive configuration setup
+ko config                   # View current configuration
 ko help                     # Show help message
 ```
+
+### Interactive Configuration
+
+Run `ko init` to configure:
+- Default editor (vim, nvim, code, etc.)
+- Setup and dev script paths
+- Custom commands for each tmux pane
+
+Configuration is saved to `~/.config/ko/config.json`.
 
 ## How it works
 
@@ -127,24 +159,25 @@ The script includes guard clauses that verify:
 
 If any requirement is missing, the script will exit with a helpful error message.
 
-## Why Bash?
+## Why Go?
 
-This script is written in Bash for several reasons:
+This tool is written in Go for several reasons:
 
 **Pros:**
-- Universally available on Unix-like systems (macOS, Linux)
-- Perfect for orchestrating shell commands (git, tmux)
-- Zero dependencies - works out of the box
-- Easy to read and modify
-- Fast execution for this use case
+- Single binary distribution - no runtime dependencies
+- Excellent CLI libraries (Cobra + Bubble Tea)
+- Cross-platform support
+- Strong error handling
+- Easy to maintain and extend
+- Interactive TUI capabilities for configuration
+- Fast execution and startup time
 
-**Alternatives considered:**
-- **Python**: Better error handling and data structures, but requires Python installation and adds complexity for simple shell orchestration
-- **Go/Rust**: Excellent for complex tools, but overkill for this use case and requires compilation/distribution
-- **Node.js**: Good for cross-platform, but requires Node installation and npm dependencies
-- **Fish/Zsh**: Better scripting features but less portable
+**Libraries used:**
+- **Cobra**: Command-line interface structure and flag parsing
+- **Bubble Tea**: Interactive terminal UI for the `ko init` command
+- **Bubbles**: Pre-built Bubble Tea components
 
-For this specific use case (automating git and tmux commands), Bash is the sweet spot of portability, simplicity, and functionality.
+The combination of Cobra for CLI structure and Bubble Tea for interactive prompts provides a professional, user-friendly experience while maintaining simplicity and performance.
 
 ## Contributing
 
