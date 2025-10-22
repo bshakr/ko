@@ -1,2 +1,7 @@
 .ko/
 .claude/
+ko
+*.exe
+*.dll
+*.so
+*.dylib
