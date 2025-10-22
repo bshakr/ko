@@ -155,17 +155,57 @@ func runRoot(cmd *cobra.Command, args []string) {
 		Render(styles.Subtitle.Render("Quick Start"))
 	fmt.Println(quickStartTitle)
 
-	quickStart := []string{
-		fmt.Sprintf("%s  Create a new worktree", styles.Code.Render("ko new <name>")),
-		fmt.Sprintf("%s  View all worktrees", styles.Code.Render("ko list")),
-		fmt.Sprintf("%s  Show configuration", styles.Code.Render("ko config")),
+	quickStart := []struct {
+		command string
+		desc    string
+	}{
+		{"ko new <name>", "Create a new worktree"},
+		{"ko list", "View all worktrees"},
+		{"ko config", "Show configuration"},
 	}
 
-	for _, item := range quickStart {
+	// Find max command width for alignment
+	maxCmdWidth := 0
+	for _, qs := range quickStart {
+		if len(qs.command) > maxCmdWidth {
+			maxCmdWidth = len(qs.command)
+		}
+	}
+
+	// Style for command column (colored but no background)
+	cmdStyle := lipgloss.NewStyle().Foreground(styles.Warning)
+
+	// Find max line length for this section
+	maxLineLen := 0
+	for _, qs := range quickStart {
+		lineLen := maxCmdWidth + 3 + len(qs.desc) // cmd + spacing + desc
+		if lineLen > maxLineLen {
+			maxLineLen = lineLen
+		}
+	}
+
+	for _, qs := range quickStart {
+		// Manually pad the command to max width
+		paddedCmd := fmt.Sprintf("%-*s", maxCmdWidth, qs.command)
+
+		// Apply styling to the padded command
+		styledCmd := cmdStyle.Render(paddedCmd)
+
+		// Build the line with proper spacing
+		line := styledCmd + "   " + qs.desc
+
+		// Pad the entire line to max line length for consistent centering
+		lineLenWithoutANSI := maxCmdWidth + 3 + len(qs.desc)
+		paddingNeeded := maxLineLen - lineLenWithoutANSI
+		if paddingNeeded > 0 {
+			line = line + strings.Repeat(" ", paddingNeeded)
+		}
+
+		// Center the entire line
 		centered := lipgloss.NewStyle().
 			Align(lipgloss.Center).
 			Width(terminalWidth).
-			Render(item)
+			Render(line)
 		fmt.Println(centered)
 	}
 	fmt.Println()
@@ -186,10 +226,42 @@ func runRoot(cmd *cobra.Command, args []string) {
 		{"Clean up old work", "ko cleanup <name>"},
 	}
 
+	// Find max workflow name width for alignment
+	maxNameWidth := 0
 	for _, wf := range workflows {
-		line := fmt.Sprintf("%s  %s",
-			styles.Key.Render(wf.name),
-			styles.Muted.Render(wf.command))
+		if len(wf.name) > maxNameWidth {
+			maxNameWidth = len(wf.name)
+		}
+	}
+
+	// Find max line length for this section
+	maxWorkflowLineLen := 0
+	for _, wf := range workflows {
+		lineLen := maxNameWidth + 3 + len(wf.command)
+		if lineLen > maxWorkflowLineLen {
+			maxWorkflowLineLen = lineLen
+		}
+	}
+
+	for _, wf := range workflows {
+		// Manually pad the workflow name to max width
+		paddedName := fmt.Sprintf("%-*s", maxNameWidth, wf.name)
+
+		// Apply styling
+		styledName := styles.Key.Render(paddedName)
+		styledCommand := styles.Muted.Render(wf.command)
+
+		// Build the line with proper spacing
+		line := styledName + "   " + styledCommand
+
+		// Pad the entire line to max line length for consistent centering
+		lineLenWithoutANSI := maxNameWidth + 3 + len(wf.command)
+		paddingNeeded := maxWorkflowLineLen - lineLenWithoutANSI
+		if paddingNeeded > 0 {
+			line = line + strings.Repeat(" ", paddingNeeded)
+		}
+
+		// Center the entire line
 		centered := lipgloss.NewStyle().
 			Align(lipgloss.Center).
 			Width(terminalWidth).
@@ -207,29 +279,62 @@ func runRoot(cmd *cobra.Command, args []string) {
 
 	cmdGroups := []struct {
 		title string
-		cmds  []string
+		cmds  []struct {
+			name string
+			desc string
+		}
 	}{
 		{
 			"Worktree Management",
-			[]string{
-				"new        Create new worktree + tmux session",
-				"list       List all worktrees",
-				"cleanup    Remove worktree and close session",
+			[]struct {
+				name string
+				desc string
+			}{
+				{"new", "Create new worktree + tmux session"},
+				{"list", "List all worktrees"},
+				{"cleanup", "Remove worktree and close session"},
 			},
 		},
 		{
 			"Configuration",
-			[]string{
-				"init       Interactive setup wizard",
-				"config     View current configuration",
+			[]struct {
+				name string
+				desc string
+			}{
+				{"init", "Interactive setup wizard"},
+				{"config", "View current configuration"},
 			},
 		},
 		{
 			"Help",
-			[]string{
-				"help       Show help for any command",
+			[]struct {
+				name string
+				desc string
+			}{
+				{"help", "Show help for any command"},
 			},
 		},
+	}
+
+	// Find max command name width across all groups for consistent alignment
+	maxCmdNameWidth := 0
+	for _, group := range cmdGroups {
+		for _, cmd := range group.cmds {
+			if len(cmd.name) > maxCmdNameWidth {
+				maxCmdNameWidth = len(cmd.name)
+			}
+		}
+	}
+
+	// Find max line length using the padded command width
+	maxCmdLineLen := 0
+	for _, group := range cmdGroups {
+		for _, cmd := range group.cmds {
+			lineLen := maxCmdNameWidth + 3 + len(cmd.desc)
+			if lineLen > maxCmdLineLen {
+				maxCmdLineLen = lineLen
+			}
+		}
 	}
 
 	for i, group := range cmdGroups {
@@ -242,11 +347,28 @@ func runRoot(cmd *cobra.Command, args []string) {
 			Render(styles.Active.Render(group.title))
 		fmt.Println(groupTitle)
 
-		for _, cmdLine := range group.cmds {
+		for _, cmd := range group.cmds {
+			// Manually pad command name to max width
+			paddedName := fmt.Sprintf("%-*s", maxCmdNameWidth, cmd.name)
+
+			// Apply styling to command name (highlighted)
+			styledCmdName := styles.Key.Render(paddedName)
+
+			// Build the line with proper spacing
+			line := styledCmdName + "   " + styles.Muted.Render(cmd.desc)
+
+			// Pad the entire line to max line length for consistent centering
+			lineLenWithoutANSI := maxCmdNameWidth + 3 + len(cmd.desc)
+			paddingNeeded := maxCmdLineLen - lineLenWithoutANSI
+			if paddingNeeded > 0 {
+				line = line + strings.Repeat(" ", paddingNeeded)
+			}
+
+			// Center the line
 			centered := lipgloss.NewStyle().
 				Align(lipgloss.Center).
 				Width(terminalWidth).
-				Render(styles.Muted.Render(cmdLine))
+				Render(line)
 			fmt.Println(centered)
 		}
 	}
