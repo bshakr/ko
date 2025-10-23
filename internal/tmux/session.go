@@ -26,6 +26,12 @@ func CreateSessionWithContext(ctx context.Context, repoName, worktreeName, workt
 		return fmt.Errorf("not in a tmux session")
 	}
 
+	// Get the pane base index from tmux configuration
+	paneBaseIndex, err := getPaneBaseIndex(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get pane base index: %w", err)
+	}
+
 	windowName := fmt.Sprintf("%s|%s", repoName, worktreeName)
 
 	// Create new tmux window
@@ -43,8 +49,12 @@ func CreateSessionWithContext(ctx context.Context, repoName, worktreeName, workt
 		return err
 	}
 
+	// Calculate pane indices based on base index
+	pane0 := fmt.Sprintf("%d", paneBaseIndex)
+	pane2 := fmt.Sprintf("%d", paneBaseIndex+2)
+
 	// Split left pane horizontally
-	if err := runTmuxCmdWithContext(ctx, "select-pane", "-t", "0"); err != nil {
+	if err := runTmuxCmdWithContext(ctx, "select-pane", "-t", pane0); err != nil {
 		return err
 	}
 	if err := runTmuxCmdWithContext(ctx, "split-window", "-v", "-c", worktreePath); err != nil {
@@ -52,7 +62,7 @@ func CreateSessionWithContext(ctx context.Context, repoName, worktreeName, workt
 	}
 
 	// Split right pane horizontally
-	if err := runTmuxCmdWithContext(ctx, "select-pane", "-t", "2"); err != nil {
+	if err := runTmuxCmdWithContext(ctx, "select-pane", "-t", pane2); err != nil {
 		return err
 	}
 	if err := runTmuxCmdWithContext(ctx, "split-window", "-v", "-c", worktreePath); err != nil {
@@ -61,34 +71,34 @@ func CreateSessionWithContext(ctx context.Context, repoName, worktreeName, workt
 
 	// Pane 0 (top-left): Setup script
 	if cfg.SetupScript != "" {
-		if err := sendKeysWithContext(ctx, 0, cfg.SetupScript); err != nil {
+		if err := sendKeysWithContext(ctx, paneBaseIndex, cfg.SetupScript); err != nil {
 			return err
 		}
 	}
 
 	// Pane 1 (bottom-left): First pane command (if configured)
 	if len(cfg.PaneCommands) > 0 {
-		if err := sendKeysWithContext(ctx, 1, cfg.PaneCommands[0]); err != nil {
+		if err := sendKeysWithContext(ctx, paneBaseIndex+1, cfg.PaneCommands[0]); err != nil {
 			return err
 		}
 	}
 
 	// Pane 2 (top-right): Second pane command (if configured)
 	if len(cfg.PaneCommands) > 1 {
-		if err := sendKeysWithContext(ctx, 2, cfg.PaneCommands[1]); err != nil {
+		if err := sendKeysWithContext(ctx, paneBaseIndex+2, cfg.PaneCommands[1]); err != nil {
 			return err
 		}
 	}
 
 	// Pane 3 (bottom-right): Third pane command (if configured)
 	if len(cfg.PaneCommands) > 2 {
-		if err := sendKeysWithContext(ctx, 3, cfg.PaneCommands[2]); err != nil {
+		if err := sendKeysWithContext(ctx, paneBaseIndex+3, cfg.PaneCommands[2]); err != nil {
 			return err
 		}
 	}
 
 	// Focus on the first pane
-	if err := runTmuxCmdWithContext(ctx, "select-pane", "-t", "0"); err != nil {
+	if err := runTmuxCmdWithContext(ctx, "select-pane", "-t", pane0); err != nil {
 		return err
 	}
 
@@ -162,4 +172,22 @@ func sendKeysWithContext(ctx context.Context, pane int, keys string) error {
 		return fmt.Errorf("failed to send keys to pane %d: %w", pane, err)
 	}
 	return nil
+}
+
+// getPaneBaseIndex retrieves the pane-base-index setting from tmux configuration
+func getPaneBaseIndex(ctx context.Context) (int, error) {
+	cmd := exec.CommandContext(ctx, "tmux", "show-options", "-gv", "pane-base-index")
+	output, err := cmd.Output()
+	if err != nil {
+		// If the option is not set, default to 0
+		return 0, nil
+	}
+
+	var baseIndex int
+	_, err = fmt.Sscanf(strings.TrimSpace(string(output)), "%d", &baseIndex)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse pane-base-index: %w", err)
+	}
+
+	return baseIndex, nil
 }
