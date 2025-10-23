@@ -108,19 +108,7 @@ func runCleanup(cmd *cobra.Command, args []string) error {
 		worktreeExists = false
 	}
 
-	// Remove the git worktree with context
-	if worktreeExists {
-		fmt.Printf("Removing git worktree: .ko/%s\n", worktreeName)
-		if err := git.RemoveWorktreeWithContext(ctx, worktreePath); err != nil {
-			fmt.Printf("Warning: Failed to remove worktree automatically: %v\n", err)
-			fmt.Printf("You may need to run: git worktree remove .ko/%s --force\n", worktreeName)
-			fmt.Println("Or manually delete uncommitted changes first")
-		} else {
-			fmt.Println("Worktree removed successfully")
-		}
-	}
-
-	// Close tmux window
+	// Close tmux window first (before removing worktree)
 	if tmux.IsInTmux() {
 		// Get repository name
 		repoName, err := git.GetRepoName()
@@ -137,6 +125,17 @@ func runCleanup(cmd *cobra.Command, args []string) error {
 		}
 	} else {
 		fmt.Println("Not in a tmux session, skipping tmux cleanup")
+	}
+
+	// Remove the git worktree with context (after closing tmux)
+	if worktreeExists {
+		fmt.Printf("Removing git worktree: .ko/%s\n", worktreeName)
+		if err := git.RemoveWorktreeWithContext(ctx, worktreePath); err != nil {
+			fmt.Printf("Warning: Failed to remove worktree automatically: %v\n", err)
+			fmt.Printf("You may need to run: git worktree remove .ko/%s --force\n", worktreeName)
+		} else {
+			fmt.Println("Worktree removed successfully")
+		}
 	}
 
 	fmt.Println("Cleanup complete!")

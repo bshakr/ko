@@ -55,7 +55,7 @@ func CreateWorktreeWithContext(ctx context.Context, path string) error {
 
 // RemoveWorktree removes a git worktree at the specified path
 func RemoveWorktree(path string) error {
-	cmd := exec.Command("git", "worktree", "remove", path)
+	cmd := exec.Command("git", "worktree", "remove", "--force", path)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%s", string(output))
@@ -65,7 +65,7 @@ func RemoveWorktree(path string) error {
 
 // RemoveWorktreeWithContext removes a git worktree at the specified path with cancellation support
 func RemoveWorktreeWithContext(ctx context.Context, path string) error {
-	cmd := exec.CommandContext(ctx, "git", "worktree", "remove", path)
+	cmd := exec.CommandContext(ctx, "git", "worktree", "remove", "--force", path)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		if ctx.Err() == context.Canceled {
