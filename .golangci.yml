@@ -1,0 +1,62 @@
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    # Default linters
+    - errcheck      # Check for unchecked errors
+    - gosimple      # Simplify code
+    - govet         # Vet examines Go source code
+    - ineffassign   # Detect ineffectual assignments
+    - staticcheck   # Advanced Go linter
+    - unused        # Check for unused code
+
+    # Additional recommended linters
+    - gofmt         # Check if code is formatted with gofmt
+    - goimports     # Check if imports are formatted
+    - misspell      # Check for misspelled English words
+    - revive        # Fast, configurable, extensible linter
+    - gosec         # Security-focused linter
+    - unconvert     # Remove unnecessary type conversions
+    - unparam       # Check for unused function parameters
+    - bodyclose     # Check if HTTP response bodies are closed
+    - noctx         # Check for sending HTTP requests without context
+    - errorlint     # Check for common mistakes with Go error wrapping
+
+linters-settings:
+  errcheck:
+    check-type-assertions: false
+    check-blank: false
+
+  govet:
+    enable-all: true
+    disable:
+      - shadow  # Can be too strict
+
+  revive:
+    rules:
+      - name: exported
+        disabled: true  # Sometimes too strict for CLI tools
+
+  gosec:
+    excludes:
+      - G204  # Subprocess launched with variable - needed for git commands
+
+issues:
+  exclude-rules:
+    # Exclude some linters from test files
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosec
+
+    # Exclude line length issues in ASCII art
+    - linters:
+        - revive
+      text: "line-length-limit"
+      path: cmd/root\.go
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
