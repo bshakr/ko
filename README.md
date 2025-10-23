@@ -29,23 +29,11 @@ Cleans up after you're done:
 
 ## Installation
 
-### Quick Install (recommended)
+### Homebrew (recommended)
 
 ```bash
-make install
-```
-
-This will build the binary and install it to `/usr/local/bin`.
-
-### Manual Installation
-
 ```bash
-# Build the binary
-go build -o ko
-
-# Move to a directory in your PATH
-sudo mv ko /usr/local/bin/ko
-sudo chmod +x /usr/local/bin/ko
+brew install bshakr/ko/ko
 ```
 
 ### Building from source
@@ -54,9 +42,6 @@ sudo chmod +x /usr/local/bin/ko
 # Clone the repository
 git clone https://github.com/bshakr/ko.git
 cd ko
-
-# Build
-make build
 
 # Or use go directly
 go build -o ko

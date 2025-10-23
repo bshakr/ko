@@ -4,7 +4,7 @@ class Ko < Formula
   url "https://github.com/bshakr/ko.git",
       using:    :git,
       tag:      "v0.1.0",
-      revision: "REPLACE_WITH_COMMIT_SHA"
+      revision: "3bceb77e8c4c5a72d8821136fa0325a456078690"
   license "MIT"
   head "https://github.com/bshakr/ko.git", branch: "main"
 
