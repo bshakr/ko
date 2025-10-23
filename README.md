@@ -1,21 +1,17 @@
 # ko - Git Worktree tmux Automation
 
-`ko` is a CLI tool written in Go that creates git worktrees and sets up a complete development environment with a single command.
+`ko` is a CLI tool written in Go that creates git worktrees and sets up a configurable development environment with a single command.
 
 ## What it does
-
-`ko` provides two commands for managing git worktrees with tmux:
 
 ### `ko new <worktree-name>`
 
 Creates a new development environment:
 
 1. Creates a new git worktree in `.ko/<worktree-name>`
-2. Opens a new tmux window with 4 panes arranged in a 2x2 grid:
-   - **Top-left**: Opens vim
-   - **Bottom-left**: Runs `./bin/setup`
-   - **Top-right**: Waits for setup to complete, then runs `./bin/dev`
-   - **Bottom-right**: Starts Claude Code CLI
+2. Opens a new tmux window with dynamically configured panes:
+   - **First pane**: Runs your setup script (e.g., `./bin/setup`)
+   - **Additional panes**: Runs any commands you configure (e.g., dev server, editor, etc.)
 
 ### `ko cleanup <worktree-name>`
 
@@ -27,10 +23,8 @@ Cleans up after you're done:
 ## Prerequisites
 
 - Git repository with worktree support
-- tmux installed
-- `./bin/setup` script in your repository
-- `./bin/dev` script in your repository
-- Claude Code CLI (optional - will just fail gracefully if not installed)
+- tmux installed and running
+- A setup script in your repository (optional, configurable via `ko init`)
 
 ## Installation
 
@@ -69,9 +63,17 @@ go build -o ko
 
 ## Usage
 
-### Creating a new worktree session
+### First time setup
 
 Navigate to your git repository and run:
+
+```bash
+ko init
+```
+
+This will guide you through setting up your configuration (setup script path and pane commands).
+
+### Creating a new worktree session
 
 ```bash
 ko new <worktree-name>
@@ -84,16 +86,14 @@ ko new feature-auth
 
 This will:
 - Create a worktree at `.ko/feature-auth`
-- Set up your complete dev environment in tmux
-- Run setup first, then automatically start the dev server once setup completes
+- Set up your configured tmux environment with panes running your specified commands
 
 ### Normal development workflow
 
 Once your session is set up:
-1. Write code in vim (or exit vim and use your preferred editor)
+1. Work in your configured environment (editor, dev server, etc.)
 2. Make commits as normal
 3. Push your branch and create a PR when ready
-4. Merge to main using your standard git workflow
 
 ### Cleaning up after you're done
 
@@ -120,21 +120,10 @@ ko config                   # View current configuration
 ko help                     # Show help message
 ```
 
-### Interactive Configuration
-
-Run `ko init` to configure:
-- Default editor (vim, nvim, code, etc.)
-- Setup and dev script paths
-- Custom commands for each tmux pane
-
-Configuration is saved to `~/.config/ko/config.json`.
-
 ## How it works
 
-### Creating worktrees
-The script uses a temporary marker file to coordinate between panes, ensuring `./bin/setup` completes before `./bin/dev` starts. Each invocation creates a unique marker file, allowing multiple worktrees to be created concurrently without conflicts.
+`ko` creates a new git worktree in the `.ko/` directory and opens a tmux window with panes configured based on your `.koconfig` file. The first pane runs your setup script, and additional panes run any commands you've configured (dev server, editor, etc.).
 
-### Cleanup
 The cleanup command finds the tmux window by name and closes it, then removes the git worktree. If you have uncommitted changes, git will warn you and you'll need to either commit them or use `git worktree remove --force` manually.
 
 ## Worktree Management
@@ -150,34 +139,14 @@ You may want to add `.ko/` to your `.gitignore` file.
 
 **Tip:** Use `ko cleanup` instead of manually removing worktrees - it will close the tmux window and clean up the worktree in one command!
 
-## Requirements Check
+## Configuration
 
-The script includes guard clauses that verify:
-- You're in a git repository
-- `./bin/setup` exists and is executable
-- `./bin/dev` exists and is executable
+Before creating your first worktree, run `ko init` to set up your configuration. The tool will prompt you for:
+- Path to your setup script (if you have one)
+- Additional commands to run in tmux panes
 
-If any requirement is missing, the script will exit with a helpful error message.
+The configuration is stored in `.koconfig` at your repository root and can be updated anytime with `ko init`.
 
-## Why Go?
-
-This tool is written in Go for several reasons:
-
-**Pros:**
-- Single binary distribution - no runtime dependencies
-- Excellent CLI libraries (Cobra + Bubble Tea)
-- Cross-platform support
-- Strong error handling
-- Easy to maintain and extend
-- Interactive TUI capabilities for configuration
-- Fast execution and startup time
-
-**Libraries used:**
-- **Cobra**: Command-line interface structure and flag parsing
-- **Bubble Tea**: Interactive terminal UI for the `ko init` command
-- **Bubbles**: Pre-built Bubble Tea components
-
-The combination of Cobra for CLI structure and Bubble Tea for interactive prompts provides a professional, user-friendly experience while maintaining simplicity and performance.
 
 ## Contributing
 
