@@ -1,7 +1,8 @@
-# ko - Git Worktree tmux Automation
+# ko 
+## git worktree tmux automation
 
 `ko` is a CLI tool written in Go that creates git worktrees and sets up a configurable development environment with a single command.
-
+![screenshot](./assets/screenshot.png)
 ## What it does
 
 ### `ko new <worktree-name>`
@@ -22,8 +23,8 @@ Cleans up after you're done:
 
 ## Prerequisites
 
-- Git repository with worktree support
-- tmux installed and running
+- [git](https://git-scm.com/)
+- [tmux](https://github.com/tmux/tmux)
 - A setup script in your repository (optional, configurable via `ko init`)
 
 ## Installation
