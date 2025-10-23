@@ -1,3 +1,17 @@
+// Package cmd implements the CLI commands for ko.
+//
+// Ko is a tool for managing git worktrees with automatic tmux session setup.
+// It provides commands to create, list, and clean up worktrees with pre-configured
+// development environments.
+//
+// The main commands are:
+//   - new: Create a new worktree with a tmux session
+//   - cleanup: Remove a worktree and close its tmux session
+//   - list: Display all ko-managed worktrees
+//   - init: Interactive configuration wizard
+//   - config: Display current configuration
+//
+// Each command is implemented in its own file (new.go, cleanup.go, etc.).
 package cmd
 
 import (
@@ -30,13 +44,6 @@ func runRoot(cmd *cobra.Command, args []string) {
 	terminalWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil || terminalWidth == 0 {
 		terminalWidth = 80 // fallback to default
-	}
-
-	// Use a max content width for better readability on wide screens
-	// but make it responsive for narrow panes
-	maxContentWidth := 70
-	if terminalWidth < maxContentWidth {
-		maxContentWidth = terminalWidth - 4 // leave some margin
 	}
 
 	// Print large ASCII title

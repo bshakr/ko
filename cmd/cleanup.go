@@ -74,10 +74,18 @@ func runCleanup(cmd *cobra.Command, args []string) error {
 	// Handle interrupt signals (Ctrl+C)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	// Signal handler goroutine - properly synchronized
+	done := make(chan struct{})
 	go func() {
+		defer close(done)
 		<-sigChan
 		fmt.Println("\nOperation cancelled by user")
 		cancel()
+	}()
+	defer func() {
+		signal.Stop(sigChan)
+		<-done // Wait for signal handler to finish
 	}()
 
 	// Get current directory
