@@ -5,3 +5,5 @@ ko
 *.dll
 *.so
 *.dylib
+bin/
+.koconfig
