@@ -41,12 +41,7 @@ func ensureSetupScript(worktreePath, setupScript string) error {
 		return nil
 	}
 
-	// Script doesn't exist in worktree, check if we're in a worktree
-	if !git.IsInWorktree() {
-		// Not in a worktree, so the script should be in the current location
-		return fmt.Errorf("setup script not found: %s", scriptPath)
-	}
-
+	// Script doesn't exist in worktree, try to copy from main repo
 	// Get the main repo root
 	mainRepoRoot, err := git.GetMainRepoRoot()
 	if err != nil {
