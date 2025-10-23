@@ -1,0 +1,64 @@
+name: Update Homebrew Formula
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get release information
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get the tag name from the release
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+
+          # Get the commit SHA for this tag
+          COMMIT_SHA=$(git rev-parse $TAG_NAME)
+          echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+
+          echo "Release tag: $TAG_NAME"
+          echo "Commit SHA: $COMMIT_SHA"
+
+      - name: Update formula
+        run: |
+          TAG_NAME="${{ steps.release.outputs.tag }}"
+          COMMIT_SHA="${{ steps.release.outputs.sha }}"
+
+          # Update the formula file
+          sed -i "s/tag:.*\".*\"/tag:      \"$TAG_NAME\"/" Formula/ko.rb
+          sed -i "s/revision:.*\".*\"/revision: \"$COMMIT_SHA\"/" Formula/ko.rb
+
+          echo "Formula updated with tag: $TAG_NAME and SHA: $COMMIT_SHA"
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add Formula/ko.rb
+
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update Homebrew formula to ${{ steps.release.outputs.tag }}"
+            git push origin main
+          fi
+
+      - name: Verify formula
+        run: |
+          # Basic syntax check
+          ruby -c Formula/ko.rb
+          echo "Formula syntax is valid"
