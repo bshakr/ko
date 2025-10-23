@@ -1,3 +1,18 @@
+// Package git provides utilities for working with git repositories and worktrees.
+//
+// This package wraps git commands to:
+//   - Check if the current directory is in a git repository
+//   - Create and remove git worktrees
+//   - Detect if running inside a worktree vs. main repository
+//   - Get repository and worktree paths
+//
+// All operations that may be long-running support context-based cancellation,
+// allowing users to interrupt operations with Ctrl+C.
+//
+// Worktree Detection:
+// The package can distinguish between the main repository and worktrees by
+// comparing git-dir and git-common-dir. This is essential for ko's functionality
+// since configuration is stored in the main repository, not individual worktrees.
 package git
 
 import (

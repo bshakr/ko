@@ -1,3 +1,16 @@
+// Package validation provides security-focused input validation for ko.
+//
+// This package validates user-supplied input to prevent security issues such as:
+//   - Path traversal attacks (using .. or absolute paths)
+//   - Special characters that could cause issues in shell commands
+//   - Reserved system names that could cause conflicts
+//   - Overly long input that could cause buffer issues
+//
+// All user-supplied worktree names must pass through ValidateWorktreeName
+// before being used in file operations or shell commands.
+//
+// The validation is designed to be strict and cross-platform compatible,
+// rejecting potentially dangerous input even on systems where it might be safe.
 package validation
 
 import (

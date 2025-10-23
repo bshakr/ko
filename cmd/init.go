@@ -6,8 +6,8 @@ import (
 
 	"github.com/bshakr/ko/internal/config"
 	"github.com/bshakr/ko/internal/styles"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 )
@@ -147,7 +147,6 @@ func (m initModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	return m, cmd
 }
-
 
 func (m initModel) View() string {
 	var b strings.Builder

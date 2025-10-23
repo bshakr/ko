@@ -18,7 +18,11 @@ func TestCreateWorktreeWithContext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp dir: %v", err)
+		}
+	}()
 
 	worktreePath := filepath.Join(tempDir, "test-worktree")
 
@@ -35,7 +39,9 @@ func TestCreateWorktreeWithContext(t *testing.T) {
 	}
 
 	// Clean up
-	RemoveWorktree(worktreePath)
+	if err := RemoveWorktree(worktreePath); err != nil {
+		t.Logf("Failed to remove worktree: %v", err)
+	}
 }
 
 func TestCreateWorktreeWithContextCancellation(t *testing.T) {
@@ -48,7 +54,11 @@ func TestCreateWorktreeWithContextCancellation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp dir: %v", err)
+		}
+	}()
 
 	worktreePath := filepath.Join(tempDir, "test-worktree-cancel")
 
@@ -59,7 +69,9 @@ func TestCreateWorktreeWithContextCancellation(t *testing.T) {
 	err = CreateWorktreeWithContext(ctx, worktreePath)
 	if err == nil {
 		t.Error("Expected error due to cancellation, got nil")
-		RemoveWorktree(worktreePath)
+		if cleanupErr := RemoveWorktree(worktreePath); cleanupErr != nil {
+			t.Logf("Failed to remove worktree: %v", cleanupErr)
+		}
 	}
 
 	if err != nil && err.Error() != "operation cancelled" {
@@ -78,7 +90,11 @@ func TestCreateWorktreeWithContextTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp dir: %v", err)
+		}
+	}()
 
 	worktreePath := filepath.Join(tempDir, "test-worktree-timeout")
 
@@ -97,7 +113,9 @@ func TestCreateWorktreeWithContextTimeout(t *testing.T) {
 	}
 
 	// Clean up
-	RemoveWorktreeWithContext(context.Background(), worktreePath)
+	if err := RemoveWorktreeWithContext(context.Background(), worktreePath); err != nil {
+		t.Logf("Failed to remove worktree: %v", err)
+	}
 }
 
 func TestRemoveWorktreeWithContext(t *testing.T) {
@@ -110,7 +128,11 @@ func TestRemoveWorktreeWithContext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp dir: %v", err)
+		}
+	}()
 
 	worktreePath := filepath.Join(tempDir, "test-worktree-remove")
 
@@ -142,7 +164,11 @@ func TestRemoveWorktreeWithContextCancellation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp dir: %v", err)
+		}
+	}()
 
 	worktreePath := filepath.Join(tempDir, "test-worktree-remove-cancel")
 
@@ -151,7 +177,11 @@ func TestRemoveWorktreeWithContextCancellation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create worktree: %v", err)
 	}
-	defer RemoveWorktree(worktreePath) // Ensure cleanup
+	defer func() {
+		if err := RemoveWorktree(worktreePath); err != nil {
+			t.Logf("Failed to remove worktree: %v", err)
+		}
+	}() // Ensure cleanup
 
 	// Test cancellation - cancel immediately
 	ctx, cancel := context.WithCancel(context.Background())

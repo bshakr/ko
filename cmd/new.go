@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/bshakr/ko/internal/config"
@@ -43,10 +44,18 @@ func runNew(cmd *cobra.Command, args []string) error {
 	// Handle interrupt signals (Ctrl+C)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	// Signal handler goroutine - properly synchronized
+	done := make(chan struct{})
 	go func() {
+		defer close(done)
 		<-sigChan
 		fmt.Println("\nOperation cancelled by user")
 		cancel()
+	}()
+	defer func() {
+		signal.Stop(sigChan)
+		<-done // Wait for signal handler to finish
 	}()
 
 	// Check if we're in a git repository
@@ -83,9 +92,25 @@ func runNew(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Check if setup script exists (relative to main repo)
+	// Check if setup script exists and is within repository boundaries
 	if cfg.SetupScript != "" {
 		setupPath := filepath.Join(mainRepoRoot, cfg.SetupScript)
+
+		// Validate setup script is within repository (security check)
+		cleanSetupPath, err := filepath.Abs(setupPath)
+		if err != nil {
+			return fmt.Errorf("failed to resolve setup script path: %w", err)
+		}
+		cleanRepoRoot, err := filepath.Abs(mainRepoRoot)
+		if err != nil {
+			return fmt.Errorf("failed to resolve repository root: %w", err)
+		}
+		if !strings.HasPrefix(cleanSetupPath, cleanRepoRoot+string(filepath.Separator)) &&
+			cleanSetupPath != cleanRepoRoot {
+			return fmt.Errorf("setup script must be within repository boundaries\nAttempted path: %s", cfg.SetupScript)
+		}
+
+		// Check if the script exists
 		if _, err := os.Stat(setupPath); os.IsNotExist(err) {
 			return fmt.Errorf("%s not found\nPlease create a setup script at %s", cfg.SetupScript, cfg.SetupScript)
 		}

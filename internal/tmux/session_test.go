@@ -2,13 +2,10 @@ package tmux
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/bshakr/ko/internal/config"
-	"github.com/bshakr/ko/internal/git"
 )
 
 func TestIsInTmux(t *testing.T) {
@@ -145,7 +142,7 @@ func TestCreateSessionWithNoPaneCommands(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		SetupScript:  "echo 'Setup'",
+		SetupScript:  "",
 		PaneCommands: []string{},
 	}
 
@@ -156,7 +153,9 @@ func TestCreateSessionWithNoPaneCommands(t *testing.T) {
 	}
 
 	// Cleanup
-	CloseWindow("test-repo", "test-worktree-0")
+	if err := CloseWindow("test-repo", "test-worktree-0"); err != nil {
+		t.Logf("Failed to close window: %v", err)
+	}
 }
 
 // TestCreateSessionWithOnePaneCommand tests creating a session with setup + 1 command
@@ -166,7 +165,7 @@ func TestCreateSessionWithOnePaneCommand(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		SetupScript:  "echo 'Setup'",
+		SetupScript:  "",
 		PaneCommands: []string{"echo 'Command 1'"},
 	}
 
@@ -177,7 +176,9 @@ func TestCreateSessionWithOnePaneCommand(t *testing.T) {
 	}
 
 	// Cleanup
-	CloseWindow("test-repo", "test-worktree-1")
+	if err := CloseWindow("test-repo", "test-worktree-1"); err != nil {
+		t.Logf("Failed to close window: %v", err)
+	}
 }
 
 // TestCreateSessionWithTwoPaneCommands tests creating a session with setup + 2 commands
@@ -187,7 +188,7 @@ func TestCreateSessionWithTwoPaneCommands(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		SetupScript:  "echo 'Setup'",
+		SetupScript:  "",
 		PaneCommands: []string{"echo 'Command 1'", "echo 'Command 2'"},
 	}
 
@@ -198,7 +199,9 @@ func TestCreateSessionWithTwoPaneCommands(t *testing.T) {
 	}
 
 	// Cleanup
-	CloseWindow("test-repo", "test-worktree-2")
+	if err := CloseWindow("test-repo", "test-worktree-2"); err != nil {
+		t.Logf("Failed to close window: %v", err)
+	}
 }
 
 // TestCreateSessionWithThreePaneCommands tests creating a session with setup + 3 commands
@@ -208,7 +211,7 @@ func TestCreateSessionWithThreePaneCommands(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		SetupScript:  "echo 'Setup'",
+		SetupScript:  "",
 		PaneCommands: []string{"echo 'Command 1'", "echo 'Command 2'", "echo 'Command 3'"},
 	}
 
@@ -219,7 +222,9 @@ func TestCreateSessionWithThreePaneCommands(t *testing.T) {
 	}
 
 	// Cleanup
-	CloseWindow("test-repo", "test-worktree-3")
+	if err := CloseWindow("test-repo", "test-worktree-3"); err != nil {
+		t.Logf("Failed to close window: %v", err)
+	}
 }
 
 // TestCreateSessionWithManyPaneCommands tests creating a session with setup + 5 commands
@@ -229,7 +234,7 @@ func TestCreateSessionWithManyPaneCommands(t *testing.T) {
 	}
 
 	cfg := &config.Config{
-		SetupScript: "echo 'Setup'",
+		SetupScript: "",
 		PaneCommands: []string{
 			"echo 'Command 1'",
 			"echo 'Command 2'",
@@ -246,5 +251,7 @@ func TestCreateSessionWithManyPaneCommands(t *testing.T) {
 	}
 
 	// Cleanup
-	CloseWindow("test-repo", "test-worktree-many")
+	if err := CloseWindow("test-repo", "test-worktree-many"); err != nil {
+		t.Logf("Failed to close window: %v", err)
+	}
 }

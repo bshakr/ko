@@ -10,20 +10,12 @@ import (
 func TestDefaultConfig(t *testing.T) {
 	cfg := DefaultConfig()
 
-	if cfg.Editor == "" {
-		t.Error("DefaultConfig() returned empty Editor")
-	}
-
 	if cfg.SetupScript == "" {
 		t.Error("DefaultConfig() returned empty SetupScript")
 	}
 
-	if cfg.DevScript == "" {
-		t.Error("DefaultConfig() returned empty DevScript")
-	}
-
-	if len(cfg.PaneCommands) == 0 {
-		t.Error("DefaultConfig() returned empty PaneCommands")
+	if cfg.PaneCommands == nil {
+		t.Error("DefaultConfig() returned nil PaneCommands")
 	}
 
 	t.Logf("Default config: %+v", cfg)
@@ -35,16 +27,18 @@ func TestConfigSaveAndLoad(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp dir: %v", err)
+		}
+	}()
 
 	// Create a test config file path
 	configPath := filepath.Join(tempDir, ".koconfig")
 
 	// Create a test config
 	testConfig := &Config{
-		Editor:      "nvim",
 		SetupScript: "./test/setup",
-		DevScript:   "./test/dev",
 		PaneCommands: []string{
 			"nvim",
 			"./test/setup",
@@ -75,16 +69,8 @@ func TestConfigSaveAndLoad(t *testing.T) {
 	}
 
 	// Verify the loaded config matches
-	if loadedConfig.Editor != testConfig.Editor {
-		t.Errorf("Editor mismatch: got %s, want %s", loadedConfig.Editor, testConfig.Editor)
-	}
-
 	if loadedConfig.SetupScript != testConfig.SetupScript {
 		t.Errorf("SetupScript mismatch: got %s, want %s", loadedConfig.SetupScript, testConfig.SetupScript)
-	}
-
-	if loadedConfig.DevScript != testConfig.DevScript {
-		t.Errorf("DevScript mismatch: got %s, want %s", loadedConfig.DevScript, testConfig.DevScript)
 	}
 
 	if len(loadedConfig.PaneCommands) != len(testConfig.PaneCommands) {
@@ -118,7 +104,7 @@ func TestConfigJSON(t *testing.T) {
 	}
 
 	// Verify unmarshaled config matches original
-	if loaded.Editor != cfg.Editor {
-		t.Errorf("Editor mismatch after marshal/unmarshal")
+	if loaded.SetupScript != cfg.SetupScript {
+		t.Errorf("SetupScript mismatch after marshal/unmarshal")
 	}
 }

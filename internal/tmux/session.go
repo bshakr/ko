@@ -1,3 +1,37 @@
+// Package tmux provides functionality for managing tmux sessions and windows.
+//
+// # Security Note: Command Injection Trust Model
+//
+// This package executes commands from the user's .koconfig file without sanitization.
+// This is intentional and follows these security principles:
+//
+//  1. Configuration is Local and User-Controlled:
+//     - The .koconfig file is stored in the user's repository
+//     - Users explicitly create and edit this file
+//     - This is equivalent to running shell scripts in the repository
+//
+//  2. No Remote/Untrusted Input:
+//     - Commands come from local configuration files only
+//     - No network inputs or user-supplied runtime arguments are executed
+//     - Worktree names are validated separately (see validation package)
+//
+//  3. Trust Model is Consistent with Git:
+//     - Similar to .git/hooks, which execute arbitrary scripts
+//     - Users already trust their repository contents
+//     - If the repository is compromised, the system is already at risk
+//
+//  4. Protection at the Configuration Layer:
+//     - The 'ko init' command shows users exactly what will be executed
+//     - Configuration is human-readable JSON
+//     - Users should review .koconfig before committing
+//
+// WARNING: Do not extend this package to execute commands from:
+// - Network sources
+// - User input at runtime (beyond validated worktree names)
+// - Untrusted or external configuration sources
+//
+// If this trust model is unacceptable for your use case, review and modify
+// the .koconfig file before using ko commands.
 package tmux
 
 import (
@@ -70,7 +104,9 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
 	}
-	defer sourceFile.Close()
+	defer func() {
+		_ = sourceFile.Close() // Ignore error in defer
+	}()
 
 	// Get source file info to preserve permissions
 	sourceInfo, err := sourceFile.Stat()
@@ -89,7 +125,9 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create destination file: %w", err)
 	}
-	defer destFile.Close()
+	defer func() {
+		_ = destFile.Close() // Ignore error in defer
+	}()
 
 	// Copy the file content
 	if _, err := io.Copy(destFile, sourceFile); err != nil {
@@ -259,7 +297,12 @@ func sendKeys(pane int, keys string) error {
 	return sendKeysWithContext(context.Background(), pane, keys)
 }
 
-// sendKeysWithContext sends keys to a specific tmux pane with cancellation support
+// sendKeysWithContext sends keys to a specific tmux pane with cancellation support.
+//
+// Security: The 'keys' parameter contains commands from the user's .koconfig file.
+// These commands are trusted local configuration (see package documentation for
+// the security trust model). The keys are passed to tmux which executes them
+// in the shell context of the pane.
 func sendKeysWithContext(ctx context.Context, pane int, keys string) error {
 	paneTarget := fmt.Sprintf("%d", pane)
 	cmd := exec.CommandContext(ctx, "tmux", "send-keys", "-t", paneTarget, keys, "C-m")

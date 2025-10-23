@@ -1,3 +1,22 @@
+// Package config handles ko configuration file management.
+//
+// Configuration is stored in a .koconfig file at the repository root.
+// The configuration includes:
+//   - setup_script: Path to a script that runs when creating a worktree
+//   - pane_commands: Commands to run in additional tmux panes
+//
+// The configuration file is JSON-formatted and can be created interactively
+// using the 'ko init' command or edited manually.
+//
+// Example .koconfig:
+//
+//	{
+//	  "setup_script": "./bin/setup",
+//	  "pane_commands": [
+//	    "vim",
+//	    "npm run dev"
+//	  ]
+//	}
 package config
 
 import (

@@ -1,3 +1,14 @@
+// Package styles defines consistent styling for ko's terminal UI.
+//
+// This package provides:
+//   - Color palette (Primary, Success, Warning, Error, etc.)
+//   - Text styles (Title, Subtitle, Key, Value, Muted, etc.)
+//   - Icons for visual consistency
+//   - Helper functions for formatted output
+//
+// All terminal output should use these styles to maintain a consistent
+// look and feel across the application. The styles use the lipgloss library
+// for terminal-aware color rendering.
 package styles
 
 import (
@@ -36,8 +47,8 @@ var (
 
 	// Subtitle for secondary headers
 	Subtitle = lipgloss.NewStyle().
-		Foreground(Primary).
-		MarginBottom(1)
+			Foreground(Primary).
+			MarginBottom(1)
 
 	// Active/Current item indicator
 	Active = lipgloss.NewStyle().
@@ -46,17 +57,17 @@ var (
 
 	// Highlighted text
 	HighlightStyle = lipgloss.NewStyle().
-		Foreground(Highlight)
+			Foreground(Highlight)
 
 	// Success message
 	SuccessMessage = lipgloss.NewStyle().
-		Foreground(Success).
-		Bold(true)
+			Foreground(Success).
+			Bold(true)
 
 	// Error message
 	ErrorMessage = lipgloss.NewStyle().
-		Foreground(Error).
-		Bold(true)
+			Foreground(Error).
+			Bold(true)
 
 	// Subtle/muted text
 	Muted = lipgloss.NewStyle().
@@ -75,13 +86,13 @@ var (
 
 	// List item style
 	ListItem = lipgloss.NewStyle().
-		PaddingLeft(2)
+			PaddingLeft(2)
 
 	// Active list item
 	ActiveListItem = lipgloss.NewStyle().
-		PaddingLeft(0).
-		Bold(true).
-		Foreground(Highlight)
+			PaddingLeft(0).
+			Bold(true).
+			Foreground(Highlight)
 
 	// Code/inline style
 	Code = lipgloss.NewStyle().
