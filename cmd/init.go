@@ -34,13 +34,13 @@ const (
 )
 
 type initModel struct {
-	step         step
-	config       *config.Config
 	setupInput   textinput.Model
 	paneInput    textinput.Model
+	config       *config.Config
 	paneCommands []string
-	choice       int // 0 = add pane, 1 = finish setup
 	err          error
+	step         step
+	choice       int // 0 = add pane, 1 = finish setup
 }
 
 func initialModel() initModel {
