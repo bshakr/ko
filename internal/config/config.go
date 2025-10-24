@@ -45,6 +45,8 @@ func DefaultConfig() *Config {
 }
 
 // ConfigPath returns the path to the .koconfig file in the repo root
+//
+//nolint:revive // config.ConfigPath() is clear and explicit
 func ConfigPath() (string, error) {
 	// Check if we're in a git repository
 	if !git.IsGitRepo() {
@@ -71,6 +73,8 @@ func ConfigPath() (string, error) {
 }
 
 // ConfigExists checks if a .koconfig file exists in the repo
+//
+//nolint:revive // config.ConfigExists() is clear and explicit
 func ConfigExists() (bool, error) {
 	configPath, err := ConfigPath()
 	if err != nil {
@@ -100,6 +104,7 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("no .koconfig found - run 'ko init' to set up configuration")
 	}
 
+	//nolint:gosec // G304: Reading config file from validated path is expected
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)

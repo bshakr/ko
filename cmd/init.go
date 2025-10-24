@@ -256,7 +256,7 @@ func (m initModel) View() string {
 	return b.String()
 }
 
-func runInit(cmd *cobra.Command, args []string) error {
+func runInit(_ *cobra.Command, _ []string) error {
 	p := tea.NewProgram(initialModel())
 	if _, err := p.Run(); err != nil {
 		return fmt.Errorf("error running interactive setup: %w", err)

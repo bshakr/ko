@@ -1,21 +1,25 @@
+version: 2
+
 run:
   timeout: 5m
   tests: true
   modules-download-mode: readonly
 
+formatters:
+  enable:
+    - gofmt         # Format code with gofmt
+    - goimports     # Format imports
+
 linters:
   enable:
     # Default linters
     - errcheck      # Check for unchecked errors
-    - gosimple      # Simplify code
     - govet         # Vet examines Go source code
     - ineffassign   # Detect ineffectual assignments
-    - staticcheck   # Advanced Go linter
+    - staticcheck   # Advanced Go linter (includes gosimple)
     - unused        # Check for unused code
 
     # Additional recommended linters
-    - gofmt         # Check if code is formatted with gofmt
-    - goimports     # Check if imports are formatted
     - misspell      # Check for misspelled English words
     - revive        # Fast, configurable, extensible linter
     - gosec         # Security-focused linter
@@ -42,7 +46,10 @@ linters-settings:
 
   gosec:
     excludes:
-      - G204  # Subprocess launched with variable - needed for git commands
+      - G204  # Subprocess launched with variable - needed for git/tmux commands
+      - G301  # Directory permissions 0755 are acceptable for worktree directories
+      - G304  # File inclusion via variable is expected for a CLI tool
+      - G306  # File permissions 0644 are acceptable for config files
 
 issues:
   exclude-rules:
@@ -57,6 +64,26 @@ issues:
         - revive
       text: "line-length-limit"
       path: cmd/root\.go
+
+    # Exclude gosec G204 (subprocess with variable) - needed for git/tmux commands
+    - linters:
+        - gosec
+      text: "G204"
+
+    # Exclude gosec G301 (directory permissions) - 0755 is standard for directories
+    - linters:
+        - gosec
+      text: "G301"
+
+    # Exclude gosec G304 (file inclusion) - expected for CLI tool
+    - linters:
+        - gosec
+      text: "G304"
+
+    # Exclude gosec G306 (file permissions) - 0644 is standard for config files
+    - linters:
+        - gosec
+      text: "G306"
 
   max-issues-per-linter: 0
   max-same-issues: 0

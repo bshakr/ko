@@ -29,7 +29,7 @@ func init() {
 	rootCmd.AddCommand(newCmd)
 }
 
-func runNew(cmd *cobra.Command, args []string) error {
+func runNew(_ *cobra.Command, args []string) error {
 	worktreeName := args[0]
 
 	// Validate worktree name for security
@@ -118,6 +118,7 @@ func runNew(cmd *cobra.Command, args []string) error {
 
 	// Create .ko directory if it doesn't exist
 	koDir := filepath.Join(mainRepoRoot, ".ko")
+	//nolint:gosec // G301: 0755 is standard permission for user directories
 	if err := os.MkdirAll(koDir, 0755); err != nil {
 		return fmt.Errorf("failed to create .ko directory: %w", err)
 	}

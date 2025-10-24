@@ -100,6 +100,7 @@ func ensureSetupScript(worktreePath, setupScript string) error {
 // copyFile copies a file from src to dst
 func copyFile(src, dst string) error {
 	// Open source file
+	//nolint:gosec // G304: Opening user-specified setup script is expected
 	sourceFile, err := os.Open(src)
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
@@ -116,11 +117,13 @@ func copyFile(src, dst string) error {
 
 	// Create destination directory if it doesn't exist
 	dstDir := filepath.Dir(dst)
+	//nolint:gosec // G301: 0755 is standard permission for directories
 	if err := os.MkdirAll(dstDir, 0755); err != nil {
 		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
 
 	// Create destination file
+	//nolint:gosec // G304: Creating file in validated worktree path is expected
 	destFile, err := os.Create(dst)
 	if err != nil {
 		return fmt.Errorf("failed to create destination file: %w", err)
@@ -167,6 +170,7 @@ func CreateSessionWithContext(ctx context.Context, repoName, worktreeName, workt
 	windowName := fmt.Sprintf("%s|%s", repoName, worktreeName)
 
 	// Create new tmux window with setup script
+	//nolint:gosec // G204: tmux commands with validated parameters are safe
 	cmd := exec.CommandContext(ctx, "tmux", "new-window", "-n", windowName, "-c", worktreePath)
 	if err := cmd.Run(); err != nil {
 		if ctx.Err() == context.Canceled {
@@ -242,7 +246,7 @@ func CreateSessionWithContext(ctx context.Context, repoName, worktreeName, workt
 }
 
 // CloseWindow closes a tmux window by name
-func CloseWindow(windowName, worktreeName string) error {
+func CloseWindow(_ /* windowName */, worktreeName string) error {
 	// Find the window index with the worktree name
 	cmd := exec.Command("tmux", "list-windows", "-F", "#{window_index}:#{window_name}")
 	output, err := cmd.Output()
@@ -267,6 +271,7 @@ func CloseWindow(windowName, worktreeName string) error {
 	}
 
 	// Kill the window
+	//nolint:gosec // G204: tmux commands with validated parameters are safe
 	cmd = exec.Command("tmux", "kill-window", "-t", windowIndex)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to close tmux window: %w", err)
@@ -305,6 +310,7 @@ func sendKeys(pane int, keys string) error {
 // in the shell context of the pane.
 func sendKeysWithContext(ctx context.Context, pane int, keys string) error {
 	paneTarget := fmt.Sprintf("%d", pane)
+	//nolint:gosec // G204: tmux commands with validated parameters are safe
 	cmd := exec.CommandContext(ctx, "tmux", "send-keys", "-t", paneTarget, keys, "C-m")
 	if err := cmd.Run(); err != nil {
 		if ctx.Err() == context.Canceled {

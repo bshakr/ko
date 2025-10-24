@@ -118,31 +118,37 @@ const (
 	IconTree    = "⚘"
 )
 
-// Helper functions
+// RenderTitle renders text with the Title style.
 func RenderTitle(text string) string {
 	return Title.Render(text)
 }
 
+// RenderSubtitle renders text with the Subtitle style.
 func RenderSubtitle(text string) string {
 	return Subtitle.Render(text)
 }
 
+// RenderSuccess renders text as a success message with a check icon.
 func RenderSuccess(text string) string {
 	return SuccessMessage.Render(IconCheck + " " + text)
 }
 
+// RenderError renders text as an error message with a cross icon.
 func RenderError(text string) string {
 	return ErrorMessage.Render(IconCross + " " + text)
 }
 
+// RenderKeyValue renders a key-value pair with styled key.
 func RenderKeyValue(key, value string) string {
 	return Key.Render(key+":") + " " + value
 }
 
+// RenderBox renders content inside a styled box.
 func RenderBox(content string) string {
 	return Box.Render(content)
 }
 
+// RenderHelp renders text with the Help style.
 func RenderHelp(text string) string {
 	return Help.Render(text)
 }

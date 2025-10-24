@@ -39,7 +39,7 @@ Creates isolated development environments with pre-configured panes.`,
 	Run: runRoot,
 }
 
-func runRoot(cmd *cobra.Command, args []string) {
+func runRoot(_ *cobra.Command, _ []string) {
 	// Get actual terminal width
 	terminalWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil || terminalWidth == 0 {
@@ -400,6 +400,7 @@ func runRoot(cmd *cobra.Command, args []string) {
 	fmt.Println()
 }
 
+// Execute runs the root command and handles any errors.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

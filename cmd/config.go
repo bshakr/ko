@@ -22,7 +22,7 @@ func init() {
 	rootCmd.AddCommand(configCmd)
 }
 
-func runConfig(cmd *cobra.Command, args []string) error {
+func runConfig(_ *cobra.Command, _ []string) error {
 	// Get terminal width
 	terminalWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil || terminalWidth == 0 {
