@@ -3,8 +3,8 @@ class Ko < Formula
   homepage "https://github.com/bshakr/ko"
   url "https://github.com/bshakr/ko.git",
       using:    :git,
-      tag:      "v0.1.0",
-      revision: "3bceb77e8c4c5a72d8821136fa0325a456078690"
+      tag:      "v0.1.1",
+      revision: "21fbb1a30e0b775a02b75b2c1e73fea1c10bf3d1"
   license "MIT"
   head "https://github.com/bshakr/ko.git", branch: "main"
 
