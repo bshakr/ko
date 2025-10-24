@@ -25,14 +25,16 @@ import (
 
 // IsGitRepo checks if the current directory is in a git repository
 func IsGitRepo() bool {
-	cmd := exec.Command("git", "rev-parse", "--is-inside-work-tree")
+	ctx := context.Background()
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--is-inside-work-tree")
 	err := cmd.Run()
 	return err == nil
 }
 
 // CreateWorktree creates a new git worktree at the specified path
 func CreateWorktree(path string) error {
-	cmd := exec.Command("git", "worktree", "add", path)
+	ctx := context.Background()
+	cmd := exec.CommandContext(ctx, "git", "worktree", "add", path)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%s", string(output))
@@ -55,7 +57,8 @@ func CreateWorktreeWithContext(ctx context.Context, path string) error {
 
 // RemoveWorktree removes a git worktree at the specified path
 func RemoveWorktree(path string) error {
-	cmd := exec.Command("git", "worktree", "remove", "--force", path)
+	ctx := context.Background()
+	cmd := exec.CommandContext(ctx, "git", "worktree", "remove", "--force", path)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%s", string(output))
@@ -78,7 +81,8 @@ func RemoveWorktreeWithContext(ctx context.Context, path string) error {
 
 // GetRepoName returns the name of the current git repository
 func GetRepoName() (string, error) {
-	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	ctx := context.Background()
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--show-toplevel")
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get repository root: %w", err)
@@ -91,13 +95,14 @@ func GetRepoName() (string, error) {
 
 // IsInWorktree checks if the current directory is inside a worktree
 func IsInWorktree() bool {
-	gitDirCmd := exec.Command("git", "rev-parse", "--git-dir")
+	ctx := context.Background()
+	gitDirCmd := exec.CommandContext(ctx, "git", "rev-parse", "--git-dir")
 	gitDirOutput, err := gitDirCmd.Output()
 	if err != nil {
 		return false
 	}
 
-	commonDirCmd := exec.Command("git", "rev-parse", "--git-common-dir")
+	commonDirCmd := exec.CommandContext(ctx, "git", "rev-parse", "--git-common-dir")
 	commonDirOutput, err := commonDirCmd.Output()
 	if err != nil {
 		return false
@@ -112,7 +117,8 @@ func IsInWorktree() bool {
 
 // GetMainRepoRoot returns the root of the main repository (not the worktree)
 func GetMainRepoRoot() (string, error) {
-	cmd := exec.Command("git", "rev-parse", "--git-common-dir")
+	ctx := context.Background()
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--git-common-dir")
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get git common dir: %w", err)
@@ -126,7 +132,8 @@ func GetMainRepoRoot() (string, error) {
 
 // GetCurrentWorktreePath returns the current worktree path
 func GetCurrentWorktreePath() (string, error) {
-	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	ctx := context.Background()
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--show-toplevel")
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get worktree path: %w", err)

@@ -36,9 +36,9 @@ const (
 type initModel struct {
 	setupInput   textinput.Model
 	paneInput    textinput.Model
-	config       *config.Config
 	paneCommands []string
 	err          error
+	config       *config.Config
 	step         step
 	choice       int // 0 = add pane, 1 = finish setup
 }

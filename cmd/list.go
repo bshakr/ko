@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -69,7 +70,8 @@ func runList(_ *cobra.Command, _ []string) error {
 	}
 
 	// List git worktrees
-	gitCmd := exec.Command("git", "worktree", "list")
+	ctx := context.Background()
+	gitCmd := exec.CommandContext(ctx, "git", "worktree", "list")
 	output, err := gitCmd.Output()
 	if err != nil {
 		return fmt.Errorf("failed to list worktrees: %w", err)

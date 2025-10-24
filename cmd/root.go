@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -113,7 +114,8 @@ func runRoot(_ *cobra.Command, _ []string) {
 	if mainRepoRoot != "" {
 		koDir := filepath.Join(mainRepoRoot, ".ko")
 		if _, err := os.Stat(koDir); err == nil {
-			gitCmd := exec.Command("git", "worktree", "list")
+			ctx := context.Background()
+			gitCmd := exec.CommandContext(ctx, "git", "worktree", "list")
 			output, err := gitCmd.Output()
 			if err == nil {
 				lines := strings.Split(string(output), "\n")

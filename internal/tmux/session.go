@@ -247,8 +247,9 @@ func CreateSessionWithContext(ctx context.Context, repoName, worktreeName, workt
 
 // CloseWindow closes a tmux window by name
 func CloseWindow(_ /* windowName */, worktreeName string) error {
+	ctx := context.Background()
 	// Find the window index with the worktree name
-	cmd := exec.Command("tmux", "list-windows", "-F", "#{window_index}:#{window_name}")
+	cmd := exec.CommandContext(ctx, "tmux", "list-windows", "-F", "#{window_index}:#{window_name}")
 	output, err := cmd.Output()
 	if err != nil {
 		return fmt.Errorf("failed to list tmux windows: %w", err)
@@ -272,7 +273,7 @@ func CloseWindow(_ /* windowName */, worktreeName string) error {
 
 	// Kill the window
 	//nolint:gosec // G204: tmux commands with validated parameters are safe
-	cmd = exec.Command("tmux", "kill-window", "-t", windowIndex)
+	cmd = exec.CommandContext(ctx, "tmux", "kill-window", "-t", windowIndex)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to close tmux window: %w", err)
 	}
