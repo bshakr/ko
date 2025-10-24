@@ -137,6 +137,7 @@ func runRoot(_ *cobra.Command, _ []string) {
 
 	// Build status section - simple left-aligned, compact
 	var statusContent strings.Builder
+	statusContent.WriteString(styles.RenderKeyValue("Version", Version) + "\n")
 	statusContent.WriteString(styles.RenderKeyValue("Repository", repoName) + "\n")
 	statusContent.WriteString(styles.RenderKeyValue("Worktrees", fmt.Sprintf("%d active", worktreeCount)) + "\n")
 	statusContent.WriteString(styles.RenderKeyValue("Current", currentWorktree) + "\n")
@@ -320,6 +321,7 @@ func runRoot(_ *cobra.Command, _ []string) {
 				name string
 				desc string
 			}{
+				{"version", "Display ko version"},
 				{"help", "Show help for any command"},
 			},
 		},

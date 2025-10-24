@@ -11,8 +11,9 @@ class Ko < Formula
   depends_on "go" => :build
 
   def install
-    # Build the binary
-    system "go", "build", *std_go_args(ldflags: "-s -w"), "-o", bin/"ko"
+    # Build the binary with version injection
+    ldflags = "-s -w -X github.com/bshakr/ko/cmd.Version=#{version}"
+    system "go", "build", *std_go_args(ldflags: ldflags), "-o", bin/"ko"
   end
 
   test do
