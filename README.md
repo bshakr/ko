@@ -32,7 +32,6 @@ Cleans up after you're done:
 ### Homebrew (recommended)
 
 ```bash
-```bash
 brew install bshakr/ko/ko
 ```
 
