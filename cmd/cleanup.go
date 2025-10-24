@@ -29,7 +29,7 @@ func init() {
 	rootCmd.AddCommand(cleanupCmd)
 }
 
-func runCleanup(cmd *cobra.Command, args []string) error {
+func runCleanup(_ *cobra.Command, args []string) error {
 	var worktreeName string
 
 	// If no argument provided, try to detect current worktree

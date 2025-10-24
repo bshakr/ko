@@ -9,8 +9,8 @@ func TestValidateWorktreeName(t *testing.T) {
 	tests := []struct {
 		name      string
 		input     string
-		shouldErr bool
 		errMsg    string
+		shouldErr bool
 	}{
 		{
 			name:      "valid simple name",

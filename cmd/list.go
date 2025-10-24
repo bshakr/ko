@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -25,7 +26,7 @@ func init() {
 	rootCmd.AddCommand(listCmd)
 }
 
-func runList(cmd *cobra.Command, args []string) error {
+func runList(_ *cobra.Command, _ []string) error {
 	// Get terminal width
 	terminalWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil || terminalWidth == 0 {
@@ -69,7 +70,8 @@ func runList(cmd *cobra.Command, args []string) error {
 	}
 
 	// List git worktrees
-	gitCmd := exec.Command("git", "worktree", "list")
+	ctx := context.Background()
+	gitCmd := exec.CommandContext(ctx, "git", "worktree", "list")
 	output, err := gitCmd.Output()
 	if err != nil {
 		return fmt.Errorf("failed to list worktrees: %w", err)

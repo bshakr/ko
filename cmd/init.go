@@ -34,13 +34,13 @@ const (
 )
 
 type initModel struct {
-	step         step
-	config       *config.Config
 	setupInput   textinput.Model
 	paneInput    textinput.Model
 	paneCommands []string
-	choice       int // 0 = add pane, 1 = finish setup
 	err          error
+	config       *config.Config
+	step         step
+	choice       int // 0 = add pane, 1 = finish setup
 }
 
 func initialModel() initModel {
@@ -256,7 +256,7 @@ func (m initModel) View() string {
 	return b.String()
 }
 
-func runInit(cmd *cobra.Command, args []string) error {
+func runInit(_ *cobra.Command, _ []string) error {
 	p := tea.NewProgram(initialModel())
 	if _, err := p.Run(); err != nil {
 		return fmt.Errorf("error running interactive setup: %w", err)

@@ -53,11 +53,13 @@ func TestConfigSaveAndLoad(t *testing.T) {
 		t.Fatalf("Failed to marshal config: %v", err)
 	}
 
+	//nolint:gosec // G306: Test file - 0644 is acceptable for temp test files
 	if err := os.WriteFile(configPath, data, 0644); err != nil {
 		t.Fatalf("Failed to write config: %v", err)
 	}
 
 	// Read it back
+	//nolint:gosec // G304: Test file - reading test config is expected
 	loadedData, err := os.ReadFile(configPath)
 	if err != nil {
 		t.Fatalf("Failed to read config: %v", err)

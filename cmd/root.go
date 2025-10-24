@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -39,7 +40,7 @@ Creates isolated development environments with pre-configured panes.`,
 	Run: runRoot,
 }
 
-func runRoot(cmd *cobra.Command, args []string) {
+func runRoot(_ *cobra.Command, _ []string) {
 	// Get actual terminal width
 	terminalWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil || terminalWidth == 0 {
@@ -113,7 +114,8 @@ func runRoot(cmd *cobra.Command, args []string) {
 	if mainRepoRoot != "" {
 		koDir := filepath.Join(mainRepoRoot, ".ko")
 		if _, err := os.Stat(koDir); err == nil {
-			gitCmd := exec.Command("git", "worktree", "list")
+			ctx := context.Background()
+			gitCmd := exec.CommandContext(ctx, "git", "worktree", "list")
 			output, err := gitCmd.Output()
 			if err == nil {
 				lines := strings.Split(string(output), "\n")
@@ -400,6 +402,7 @@ func runRoot(cmd *cobra.Command, args []string) {
 	fmt.Println()
 }
 
+// Execute runs the root command and handles any errors.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
