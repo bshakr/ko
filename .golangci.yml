@@ -50,35 +50,3 @@ linters:
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-rules:
-    # Exclude some linters from test files
-    - path: _test\.go
-      linters:
-        - errcheck
-        - gosec
-
-    # Exclude line length issues in ASCII art
-    - linters:
-        - revive
-      text: "line-length-limit"
-      path: cmd/root\.go
-
-    # Exclude gosec G204 (subprocess with variable) - needed for git/tmux commands
-    - linters:
-        - gosec
-      text: "G204"
-
-    # Exclude gosec G301 (directory permissions) - 0755 is standard for directories
-    - linters:
-        - gosec
-      text: "G301"
-
-    # Exclude gosec G304 (file inclusion) - expected for CLI tool
-    - linters:
-        - gosec
-      text: "G304"
-
-    # Exclude gosec G306 (file permissions) - 0644 is standard for config files
-    - linters:
-        - gosec
-      text: "G306"
