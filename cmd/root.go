@@ -490,222 +490,273 @@ func Execute() {
 }
 
 func init() {
-	// Customize help template
+	// Customize help template to use our custom usage function
 	rootCmd.SetHelpTemplate(getCustomHelpTemplate())
+	rootCmd.SetUsageFunc(customUsageFunc)
 }
 
 // getCustomHelpTemplate returns a custom help template with enhanced styling
 func getCustomHelpTemplate() string {
-	return `{{with (or .Long .Short)}}{{. | trimTrailingWhitespaces}}
-
-{{end}}{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}`
+	// Return simple template since we handle everything in the UsageFunc
+	return `{{.UsageString}}`
 }
 
-// Custom usage template
-func init() {
-	rootCmd.SetUsageFunc(func(cmd *cobra.Command) error {
-		// Get actual terminal width
-		terminalWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
-		if err != nil || terminalWidth == 0 {
-			terminalWidth = 80
-		}
+// Helper functions for rendering
 
-		// Header with decorative border
-		topBorder := lipgloss.NewStyle().
-			Foreground(styles.Subtle).
-			Align(lipgloss.Center).
-			Width(terminalWidth).
-			Render(strings.Repeat("─", 60))
+// fprintln is a wrapper around fmt.Fprintln that ignores errors
+// This is safe because we're writing to cmd.OutOrStdout() which is typically stdout
+func fprintln(w interface {
+	Write(p []byte) (n int, err error)
+}, a ...interface{},
+) {
+	_, _ = fmt.Fprintln(w, a...)
+}
 
-		title := lipgloss.NewStyle().
+// renderBorder creates a centered decorative border
+func renderBorder(terminalWidth int) string {
+	return lipgloss.NewStyle().
+		Foreground(styles.Subtle).
+		Align(lipgloss.Center).
+		Width(terminalWidth).
+		Render(strings.Repeat("─", 60))
+}
+
+// renderDivider creates a centered section divider
+func renderDivider(terminalWidth int) string {
+	return lipgloss.NewStyle().
+		Foreground(styles.Subtle).
+		Align(lipgloss.Center).
+		Width(terminalWidth).
+		Render("◆ ◆ ◆")
+}
+
+// renderCentered centers text within the terminal width
+func renderCentered(text string, terminalWidth int) string {
+	return lipgloss.NewStyle().
+		Align(lipgloss.Center).
+		Width(terminalWidth).
+		Render(text)
+}
+
+// renderGroupTitle creates a styled, centered group title box
+func renderGroupTitle(icon, title string, terminalWidth int) string {
+	titleText := icon + " " + title
+	titleStyled := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(styles.Primary).
+		Render(titleText)
+
+	titleBox := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.Subtle).
+		Padding(0, 1).
+		Render(titleStyled)
+
+	return renderCentered(titleBox, terminalWidth)
+}
+
+// renderCommandLine creates a styled, centered command line with proper padding
+func renderCommandLine(cmdName, cmdDesc string, cmdWidth, maxLineLen, terminalWidth int) string {
+	paddedCmd := fmt.Sprintf("%-*s", cmdWidth, cmdName)
+	styledName := styles.Key.Render(paddedCmd)
+	styledDesc := styles.Muted.Render(cmdDesc)
+	line := styledName + "   " + styledDesc
+
+	// Pad the entire line to max line length for consistent centering
+	lineLenWithoutANSI := cmdWidth + 3 + len(cmdDesc)
+	paddingNeeded := maxLineLen - lineLenWithoutANSI
+	if paddingNeeded > 0 {
+		line = line + strings.Repeat(" ", paddingNeeded)
+	}
+
+	return renderCentered(line, terminalWidth)
+}
+
+// customUsageFunc provides custom help/usage formatting
+func customUsageFunc(cmd *cobra.Command) error {
+	// Get actual terminal width
+	terminalWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil || terminalWidth == 0 {
+		terminalWidth = 80
+	}
+
+	// Header with decorative border
+	border := renderBorder(terminalWidth)
+	title := renderCentered(
+		lipgloss.NewStyle().
 			Bold(true).
 			Foreground(styles.Primary).
-			Align(lipgloss.Center).
-			Width(terminalWidth).
-			Render("KO - Git Worktree tmux Automation")
+			Render("KO - Git Worktree tmux Automation"),
+		terminalWidth,
+	)
 
-		subtitle := lipgloss.NewStyle().
-			Foreground(styles.Subtle).
-			Align(lipgloss.Center).
-			Width(terminalWidth).
-			Render(cmd.Long)
+	out := cmd.OutOrStdout()
+	fprintln(out)
+	fprintln(out, border)
+	fprintln(out, title)
+	fprintln(out, border)
+	fprintln(out)
 
-		fmt.Fprintln(cmd.OutOrStdout())
-		fmt.Fprintln(cmd.OutOrStdout(), topBorder)
-		fmt.Fprintln(cmd.OutOrStdout(), title)
-		fmt.Fprintln(cmd.OutOrStdout())
-		fmt.Fprintln(cmd.OutOrStdout(), subtitle)
-		fmt.Fprintln(cmd.OutOrStdout(), topBorder)
-		fmt.Fprintln(cmd.OutOrStdout())
-
-		// Usage section
-		if cmd.Runnable() {
-			usageHeader := lipgloss.NewStyle().
+	// Usage section
+	if cmd.Runnable() {
+		usageHeader := renderCentered(
+			lipgloss.NewStyle().
 				Bold(true).
 				Foreground(styles.Primary).
-				Render("📖 USAGE")
+				Render("📖 USAGE"),
+			terminalWidth,
+		)
 
-			usageText := lipgloss.NewStyle().
+		usageText := renderCentered(
+			lipgloss.NewStyle().
 				Foreground(styles.Warning).
-				Render(cmd.UseLine())
+				Render(cmd.UseLine()),
+			terminalWidth,
+		)
 
-			fmt.Fprintln(cmd.OutOrStdout(), usageHeader)
-			fmt.Fprintf(cmd.OutOrStdout(), "  %s", usageText)
-			fmt.Fprintln(cmd.OutOrStdout())
-			fmt.Fprintln(cmd.OutOrStdout())
-		}
+		fprintln(out, usageHeader)
+		fprintln(out, usageText)
+		fprintln(out)
+	}
 
-		// Available Commands section
-		if cmd.HasAvailableSubCommands() {
-			// Section divider
-			divider := lipgloss.NewStyle().
-				Foreground(styles.Subtle).
-				Render("◆ ◆ ◆")
-			fmt.Fprintln(cmd.OutOrStdout(), divider)
-			fmt.Fprintln(cmd.OutOrStdout())
+	// Available Commands section
+	if cmd.HasAvailableSubCommands() {
+		// Section divider
+		fprintln(out, renderDivider(terminalWidth))
+		fprintln(out)
 
-			commandsHeader := lipgloss.NewStyle().
+		commandsHeader := renderCentered(
+			lipgloss.NewStyle().
 				Bold(true).
 				Foreground(styles.Primary).
-				Render("📦 AVAILABLE COMMANDS")
+				Render("📦 AVAILABLE COMMANDS"),
+			terminalWidth,
+		)
 
-			fmt.Fprintln(cmd.OutOrStdout(), commandsHeader)
-			fmt.Fprintln(cmd.OutOrStdout())
+		fprintln(out, commandsHeader)
+		fprintln(out)
 
-			// Group commands by category
-			worktreeCommands := []string{}
-			configCommands := []string{}
-			otherCommands := []string{}
+		// Group commands by category
+		worktreeCommands := []string{}
+		configCommands := []string{}
+		otherCommands := []string{}
 
-			for _, c := range cmd.Commands() {
-				if !c.IsAvailableCommand() {
-					continue
-				}
-
-				switch c.Name() {
-				case "new", "list", "cleanup":
-					worktreeCommands = append(worktreeCommands, c.Name()+"§"+c.Short)
-				case "init", "config":
-					configCommands = append(configCommands, c.Name()+"§"+c.Short)
-				default:
-					otherCommands = append(otherCommands, c.Name()+"§"+c.Short)
-				}
+		for _, c := range cmd.Commands() {
+			if !c.IsAvailableCommand() {
+				continue
 			}
 
-			// Print grouped commands
-			if len(worktreeCommands) > 0 {
-				groupTitle := lipgloss.NewStyle().
-					Bold(true).
-					Foreground(styles.Primary).
-					Render("  ⎇ Worktree Management")
-
-				groupBox := lipgloss.NewStyle().
-					Border(lipgloss.RoundedBorder()).
-					BorderForeground(styles.Subtle).
-					Padding(0, 1).
-					Render(groupTitle)
-
-				fmt.Fprintln(cmd.OutOrStdout(), groupBox)
-
-				for _, cmdInfo := range worktreeCommands {
-					parts := strings.Split(cmdInfo, "§")
-					cmdName := styles.Key.Render(fmt.Sprintf("  %-12s", parts[0]))
-					cmdDesc := styles.Muted.Render(parts[1])
-					fmt.Fprintf(cmd.OutOrStdout(), "  %s %s\n", cmdName, cmdDesc)
-				}
-				fmt.Fprintln(cmd.OutOrStdout())
-			}
-
-			if len(configCommands) > 0 {
-				groupTitle := lipgloss.NewStyle().
-					Bold(true).
-					Foreground(styles.Primary).
-					Render("  ⚙ Configuration")
-
-				groupBox := lipgloss.NewStyle().
-					Border(lipgloss.RoundedBorder()).
-					BorderForeground(styles.Subtle).
-					Padding(0, 1).
-					Render(groupTitle)
-
-				fmt.Fprintln(cmd.OutOrStdout(), groupBox)
-
-				for _, cmdInfo := range configCommands {
-					parts := strings.Split(cmdInfo, "§")
-					cmdName := styles.Key.Render(fmt.Sprintf("  %-12s", parts[0]))
-					cmdDesc := styles.Muted.Render(parts[1])
-					fmt.Fprintf(cmd.OutOrStdout(), "  %s %s\n", cmdName, cmdDesc)
-				}
-				fmt.Fprintln(cmd.OutOrStdout())
-			}
-
-			if len(otherCommands) > 0 {
-				groupTitle := lipgloss.NewStyle().
-					Bold(true).
-					Foreground(styles.Primary).
-					Render("  ❓ Help & Other")
-
-				groupBox := lipgloss.NewStyle().
-					Border(lipgloss.RoundedBorder()).
-					BorderForeground(styles.Subtle).
-					Padding(0, 1).
-					Render(groupTitle)
-
-				fmt.Fprintln(cmd.OutOrStdout(), groupBox)
-
-				for _, cmdInfo := range otherCommands {
-					parts := strings.Split(cmdInfo, "§")
-					cmdName := styles.Key.Render(fmt.Sprintf("  %-12s", parts[0]))
-					cmdDesc := styles.Muted.Render(parts[1])
-					fmt.Fprintf(cmd.OutOrStdout(), "  %s %s\n", cmdName, cmdDesc)
-				}
-				fmt.Fprintln(cmd.OutOrStdout())
+			switch c.Name() {
+			case "new", "list", "cleanup":
+				worktreeCommands = append(worktreeCommands, c.Name()+"§"+c.Short)
+			case "init", "config":
+				configCommands = append(configCommands, c.Name()+"§"+c.Short)
+			default:
+				otherCommands = append(otherCommands, c.Name()+"§"+c.Short)
 			}
 		}
 
-		// Flags section
-		if cmd.HasAvailableLocalFlags() {
-			divider := lipgloss.NewStyle().
-				Foreground(styles.Subtle).
-				Render("◆ ◆ ◆")
-			fmt.Fprintln(cmd.OutOrStdout(), divider)
-			fmt.Fprintln(cmd.OutOrStdout())
+		// Find max command width across ALL groups for consistent alignment
+		maxCmdWidthGlobal := 0
+		for _, cmdInfo := range worktreeCommands {
+			parts := strings.Split(cmdInfo, "§")
+			if len(parts[0]) > maxCmdWidthGlobal {
+				maxCmdWidthGlobal = len(parts[0])
+			}
+		}
+		for _, cmdInfo := range configCommands {
+			parts := strings.Split(cmdInfo, "§")
+			if len(parts[0]) > maxCmdWidthGlobal {
+				maxCmdWidthGlobal = len(parts[0])
+			}
+		}
+		for _, cmdInfo := range otherCommands {
+			parts := strings.Split(cmdInfo, "§")
+			if len(parts[0]) > maxCmdWidthGlobal {
+				maxCmdWidthGlobal = len(parts[0])
+			}
+		}
 
-			flagsHeader := lipgloss.NewStyle().
+		// Find max line length across ALL commands for consistent padding
+		maxLineLen := 0
+		allCommands := append(append(worktreeCommands, configCommands...), otherCommands...)
+		for _, cmdInfo := range allCommands {
+			parts := strings.Split(cmdInfo, "§")
+			lineLen := maxCmdWidthGlobal + 3 + len(parts[1]) // cmd + spacing + desc
+			if lineLen > maxLineLen {
+				maxLineLen = lineLen
+			}
+		}
+
+		// Print grouped commands
+		if len(worktreeCommands) > 0 {
+			fprintln(out, renderGroupTitle("⎇", "Worktree Management", terminalWidth))
+
+			for _, cmdInfo := range worktreeCommands {
+				parts := strings.Split(cmdInfo, "§")
+				fprintln(out, renderCommandLine(parts[0], parts[1], maxCmdWidthGlobal, maxLineLen, terminalWidth))
+			}
+			fprintln(out)
+		}
+
+		if len(configCommands) > 0 {
+			fprintln(out, renderGroupTitle("⚙", "Configuration", terminalWidth))
+
+			for _, cmdInfo := range configCommands {
+				parts := strings.Split(cmdInfo, "§")
+				fprintln(out, renderCommandLine(parts[0], parts[1], maxCmdWidthGlobal, maxLineLen, terminalWidth))
+			}
+			fprintln(out)
+		}
+
+		if len(otherCommands) > 0 {
+			fprintln(out, renderGroupTitle("❓", "Help & Other", terminalWidth))
+
+			for _, cmdInfo := range otherCommands {
+				parts := strings.Split(cmdInfo, "§")
+				fprintln(out, renderCommandLine(parts[0], parts[1], maxCmdWidthGlobal, maxLineLen, terminalWidth))
+			}
+			fprintln(out)
+		}
+	}
+
+	// Flags section
+	if cmd.HasAvailableLocalFlags() {
+		fprintln(out, renderDivider(terminalWidth))
+		fprintln(out)
+
+		flagsHeader := renderCentered(
+			lipgloss.NewStyle().
 				Bold(true).
 				Foreground(styles.Primary).
-				Render("⚑ FLAGS")
+				Render("⚑ FLAGS"),
+			terminalWidth,
+		)
 
-			fmt.Fprintln(cmd.OutOrStdout(), flagsHeader)
-			fmt.Fprintln(cmd.OutOrStdout(), cmd.LocalFlags().FlagUsages())
-		}
+		fprintln(out, flagsHeader)
 
-		// Footer tip
-		divider := lipgloss.NewStyle().
-			Foreground(styles.Subtle).
-			Render("◆ ◆ ◆")
-		fmt.Fprintln(cmd.OutOrStdout(), divider)
-		fmt.Fprintln(cmd.OutOrStdout())
+		// Center flag usages
+		flagUsages := cmd.LocalFlags().FlagUsages()
+		fprintln(out, renderCentered(flagUsages, terminalWidth))
+	}
 
-		tip := "💡 Use \"ko [command] --help\" for more information about a command"
-		tipBox := lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(styles.Warning).
-			Padding(0, 1).
-			Foreground(styles.Warning).
-			Render(tip)
+	// Footer tip
+	fprintln(out, renderDivider(terminalWidth))
+	fprintln(out)
 
-		fmt.Fprintln(cmd.OutOrStdout(), tipBox)
-		fmt.Fprintln(cmd.OutOrStdout())
+	tip := "💡 Use \"ko [command] --help\" for more information about a command"
+	tipBox := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.Warning).
+		Padding(0, 1).
+		Foreground(styles.Warning).
+		Render(tip)
 
-		// Bottom border
-		bottomBorder := lipgloss.NewStyle().
-			Foreground(styles.Subtle).
-			Align(lipgloss.Center).
-			Width(terminalWidth).
-			Render(strings.Repeat("─", 60))
-		fmt.Fprintln(cmd.OutOrStdout(), bottomBorder)
+	fprintln(out, renderCentered(tipBox, terminalWidth))
+	fprintln(out)
 
-		return nil
-	})
+	// Bottom border
+	fprintln(out, renderBorder(terminalWidth))
+
+	return nil
 }
