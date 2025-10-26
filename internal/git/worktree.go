@@ -133,7 +133,7 @@ func GetMainRepoRoot() (string, error) {
 // GetCurrentWorktreePath returns the current worktree path
 func GetCurrentWorktreePath() (string, error) {
 	ctx := context.Background()
-	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--show-toplevel")
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--git-dir")
 	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("failed to get worktree path: %w", err)

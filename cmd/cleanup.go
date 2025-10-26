@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
 	"path/filepath"
-	"syscall"
+	"runtime"
+	"strings"
 
 	"github.com/bshakr/ko/internal/git"
 	"github.com/bshakr/ko/internal/tmux"
@@ -29,34 +29,33 @@ func init() {
 	rootCmd.AddCommand(cleanupCmd)
 }
 
+func extractWorkTreeName() (string, error) {
+	if !git.IsInWorktree() {
+		return "", fmt.Errorf("not in a worktree")
+	}
+
+	currentPath, err := git.GetCurrentWorktreePath()
+	if err != nil {
+		return "", fmt.Errorf("failed to get current worktree path: %w", err)
+	}
+
+	return filepath.Base(filepath.Dir(currentPath)), nil
+}
+
 func runCleanup(_ *cobra.Command, args []string) error {
+	// Windows is not supported due to differences in process management
+	if runtime.GOOS == "windows" {
+		return fmt.Errorf("cleanup command is not supported on Windows")
+	}
+
 	var worktreeName string
 
 	// If no argument provided, try to detect current worktree
 	if len(args) == 0 {
-		if !git.IsGitRepo() {
-			return fmt.Errorf("not in a git repository\nPlease run this command from within a git repository or specify a worktree name")
-		}
-
-		if !git.IsInWorktree() {
-			return fmt.Errorf("not in a worktree\nPlease specify a worktree name or run from within a worktree")
-		}
-
-		// Get the current worktree path and extract the name
-		currentPath, err := git.GetCurrentWorktreePath()
+		worktreeName, err := extractWorkTreeName()
 		if err != nil {
-			return fmt.Errorf("failed to get current worktree: %w", err)
+			return fmt.Errorf("failed to extract worktree name: %w", err)
 		}
-
-		// Extract worktree name from path (should be .ko/<name>)
-		worktreeName = filepath.Base(currentPath)
-
-		// Verify this is actually a .ko worktree by checking if parent is .ko
-		parentDir := filepath.Base(filepath.Dir(currentPath))
-		if parentDir != ".ko" {
-			return fmt.Errorf("current worktree is not a ko worktree (not in .ko directory)\nPlease specify a worktree name explicitly")
-		}
-
 		fmt.Printf("Detected current worktree: %s\n", worktreeName)
 	} else {
 		worktreeName = args[0]
@@ -71,36 +70,16 @@ func runCleanup(_ *cobra.Command, args []string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Handle interrupt signals (Ctrl+C)
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
-	// Signal handler goroutine - properly synchronized
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		<-sigChan
-		fmt.Println("\nOperation cancelled by user")
-		cancel()
-	}()
-	defer func() {
-		signal.Stop(sigChan)
-		<-done // Wait for signal handler to finish
-	}()
-
-	// Get current directory
-	currentDir, err := os.Getwd()
+	// Get main repository root
+	mainRepoRoot, err := git.GetMainRepoRoot()
 	if err != nil {
-		return fmt.Errorf("failed to get current directory: %w", err)
+		return fmt.Errorf("failed to get main repository root: %w", err)
 	}
 
-	// Check if we're in a git repository
-	if !git.IsGitRepo() {
-		return fmt.Errorf("not in a git repository\nPlease run this command from within a git repository")
-	}
+	// Build worktree path
+	worktreePath := filepath.Join(mainRepoRoot, ".ko", worktreeName)
 
 	// Check if worktree exists
-	worktreePath := filepath.Join(currentDir, ".ko", worktreeName)
 	worktreeExists := true
 	if _, err := os.Stat(worktreePath); os.IsNotExist(err) {
 		fmt.Printf("Warning: Worktree .ko/%s not found\n", worktreeName)
@@ -108,9 +87,47 @@ func runCleanup(_ *cobra.Command, args []string) error {
 		worktreeExists = false
 	}
 
-	// Close tmux window first (before removing worktree)
+	// Get current directory
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current directory: %w", err)
+	}
+
+	// Check if we're running from within the worktree being cleaned up
+	currentPath, err := filepath.Abs(currentDir)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path: %w", err)
+	}
+	absWorktreePath, err := filepath.Abs(worktreePath)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute worktree path: %w", err)
+	}
+
+	// Use filepath.Rel for robust path comparison
+	rel, err := filepath.Rel(absWorktreePath, currentPath)
+	isInTargetWorktree := err == nil && !strings.HasPrefix(rel, "..")
+
+	// Step 1: If in target worktree, switch to parent directory
+	if isInTargetWorktree {
+		fmt.Println("Running from within target worktree, switching to parent repository...")
+		if err := os.Chdir(mainRepoRoot); err != nil {
+			return fmt.Errorf("failed to change to parent directory: %w", err)
+		}
+		fmt.Printf("Changed directory to: %s\n", mainRepoRoot)
+	}
+
+	// Step 2: Remove the git worktree
+	if worktreeExists {
+		fmt.Printf("Removing git worktree: .ko/%s\n", worktreeName)
+		if err := git.RemoveWorktreeWithContext(ctx, worktreePath); err != nil {
+			fmt.Printf("Warning: Failed to remove worktree: %v\n", err)
+		} else {
+			fmt.Println("Worktree removed successfully")
+		}
+	}
+
+	// Step 3: Close tmux window (tmux will automatically switch to previous window)
 	if tmux.IsInTmux() {
-		// Get repository name
 		repoName, err := git.GetRepoName()
 		if err != nil {
 			fmt.Printf("Warning: Failed to get repository name: %v\n", err)
@@ -121,21 +138,10 @@ func runCleanup(_ *cobra.Command, args []string) error {
 		if err := tmux.CloseWindow(windowName, worktreeName); err != nil {
 			fmt.Printf("Warning: %v\n", err)
 		} else {
-			fmt.Println("Tmux window closed")
+			fmt.Println("Tmux window closed (switched to previous window)")
 		}
 	} else {
 		fmt.Println("Not in a tmux session, skipping tmux cleanup")
-	}
-
-	// Remove the git worktree with context (after closing tmux)
-	if worktreeExists {
-		fmt.Printf("Removing git worktree: .ko/%s\n", worktreeName)
-		if err := git.RemoveWorktreeWithContext(ctx, worktreePath); err != nil {
-			fmt.Printf("Warning: Failed to remove worktree automatically: %v\n", err)
-			fmt.Printf("You may need to run: git worktree remove .ko/%s --force\n", worktreeName)
-		} else {
-			fmt.Println("Worktree removed successfully")
-		}
 	}
 
 	fmt.Println("Cleanup complete!")
