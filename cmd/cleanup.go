@@ -4,14 +4,22 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
+	"time"
 
 	"github.com/bshakr/ko/internal/git"
 	"github.com/bshakr/ko/internal/tmux"
 	"github.com/bshakr/ko/internal/validation"
 	"github.com/spf13/cobra"
+)
+
+var (
+	detachedCleanup bool
+	detachedPath    string
 )
 
 var cleanupCmd = &cobra.Command{
@@ -27,9 +35,18 @@ it will automatically clean up the current worktree.`,
 
 func init() {
 	rootCmd.AddCommand(cleanupCmd)
+	cleanupCmd.Flags().BoolVar(&detachedCleanup, "detached", false, "Internal flag for detached cleanup")
+	cleanupCmd.Flags().StringVar(&detachedPath, "detached-path", "", "Internal flag for worktree path")
+	_ = cleanupCmd.Flags().MarkHidden("detached")
+	_ = cleanupCmd.Flags().MarkHidden("detached-path")
 }
 
 func runCleanup(_ *cobra.Command, args []string) error {
+	// Handle detached cleanup mode (spawned as background process)
+	if detachedCleanup {
+		return runDetachedCleanup()
+	}
+
 	var worktreeName string
 
 	// If no argument provided, try to detect current worktree
@@ -108,7 +125,29 @@ func runCleanup(_ *cobra.Command, args []string) error {
 		worktreeExists = false
 	}
 
+	// Check if we're running from within the worktree we're trying to cleanup
+	// If so, we need to spawn a detached process to complete the cleanup after this process exits
+	currentPath, err := filepath.Abs(currentDir)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path: %w", err)
+	}
+	absWorktreePath, err := filepath.Abs(worktreePath)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute worktree path: %w", err)
+	}
+
+	// Check if current path is within the worktree being cleaned up
+	isInTargetWorktree := strings.HasPrefix(currentPath, absWorktreePath+string(filepath.Separator)) ||
+		currentPath == absWorktreePath
+
+	if isInTargetWorktree && tmux.IsInTmux() {
+		fmt.Println("Detected: running cleanup from within the target worktree")
+		fmt.Println("Spawning detached process to complete cleanup...")
+		return spawnDetachedCleanup(worktreeName, absWorktreePath)
+	}
+
 	// Close tmux window first (before removing worktree)
+	tmuxWindowClosed := false
 	if tmux.IsInTmux() {
 		// Get repository name
 		repoName, err := git.GetRepoName()
@@ -122,9 +161,18 @@ func runCleanup(_ *cobra.Command, args []string) error {
 			fmt.Printf("Warning: %v\n", err)
 		} else {
 			fmt.Println("Tmux window closed")
+			tmuxWindowClosed = true
 		}
 	} else {
 		fmt.Println("Not in a tmux session, skipping tmux cleanup")
+	}
+
+	// Wait for shell processes to terminate after tmux window closure
+	// tmux kill-window sends termination signals but doesn't wait for processes to exit
+	// The shell (zsh) needs time to fully terminate and release its hold on the directory
+	if tmuxWindowClosed {
+		fmt.Println("Waiting for shell processes to terminate...")
+		time.Sleep(1 * time.Second)
 	}
 
 	// Remove the git worktree with context (after closing tmux)
@@ -139,5 +187,78 @@ func runCleanup(_ *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("Cleanup complete!")
+	return nil
+}
+
+// spawnDetachedCleanup spawns a detached background process to complete the cleanup
+// This is necessary when cleaning up the worktree we're currently running in
+func spawnDetachedCleanup(worktreeName, worktreePath string) error {
+	// Get repository name for tmux window
+	repoName, err := git.GetRepoName()
+	if err != nil {
+		fmt.Printf("Warning: Failed to get repository name: %v\n", err)
+		repoName = ""
+	}
+
+	// Close the tmux window first
+	windowName := fmt.Sprintf("%s|%s", repoName, worktreeName)
+	if err := tmux.CloseWindow(windowName, worktreeName); err != nil {
+		fmt.Printf("Warning: %v\n", err)
+		// Continue anyway - try to remove worktree
+	} else {
+		fmt.Println("Tmux window will be closed...")
+	}
+
+	// Get the current executable path
+	executable, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %w", err)
+	}
+
+	// Spawn detached process to remove worktree after this process exits
+	// Use nohup-like approach: detach from terminal, ignore signals
+	// Use background context since this process should run independently
+	cmd := exec.CommandContext(context.Background(), executable, "cleanup", "--detached", "--detached-path", worktreePath)
+
+	// Detach the process completely
+	cmd.Stdin = nil
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid: true,  // Create new process group
+		Pgid:    0,
+	}
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to spawn detached cleanup process: %w", err)
+	}
+
+	fmt.Println("Detached cleanup process spawned successfully")
+	fmt.Println("Worktree will be removed after window closure")
+
+	// Don't wait for the command, let it run detached
+	return nil
+}
+
+// runDetachedCleanup runs in the detached background process to complete cleanup
+func runDetachedCleanup() error {
+	if detachedPath == "" {
+		return fmt.Errorf("detached-path not provided")
+	}
+
+	// Wait for parent process and shell to fully terminate
+	// This needs to be longer than the normal delay since we're running detached
+	time.Sleep(2 * time.Second)
+
+	// Remove the worktree
+	ctx := context.Background()
+	if err := git.RemoveWorktreeWithContext(ctx, detachedPath); err != nil {
+		// Log error to a file since we can't output to terminal
+		logFile := filepath.Join(os.TempDir(), "ko-cleanup-error.log")
+		//nolint:gosec // G306: Writing cleanup logs to temp directory is expected
+		_ = os.WriteFile(logFile, []byte(fmt.Sprintf("Failed to remove worktree %s: %v\n", detachedPath, err)), 0644)
+		return err
+	}
+
 	return nil
 }
