@@ -6,12 +6,13 @@
 //
 // The main commands are:
 //   - new: Create a new worktree with a tmux session
+//   - switch: Switch to an existing worktree's tmux session
 //   - cleanup: Remove a worktree and close its tmux session
 //   - list: Display all ko-managed worktrees
 //   - init: Interactive configuration wizard
 //   - config: Display current configuration
 //
-// Each command is implemented in its own file (new.go, cleanup.go, etc.).
+// Each command is implemented in its own file (new.go, switch.go, cleanup.go, etc.).
 package cmd
 
 import (
@@ -198,6 +199,7 @@ func runRoot(_ *cobra.Command, _ []string) {
 		desc    string
 	}{
 		{"➜", "ko new <name>", "Create a new worktree"},
+		{"🔄", "ko switch <name>", "Switch to a worktree"},
 		{"📋", "ko list", "View all worktrees"},
 		{"⚙", "ko config", "Show configuration"},
 	}
@@ -342,6 +344,7 @@ func runRoot(_ *cobra.Command, _ []string) {
 				desc string
 			}{
 				{"new", "Create new worktree + tmux session"},
+				{"switch", "Switch to existing worktree session"},
 				{"list", "List all worktrees"},
 				{"cleanup", "Remove worktree and close session"},
 			},
@@ -647,7 +650,7 @@ func customUsageFunc(cmd *cobra.Command) error {
 			}
 
 			switch c.Name() {
-			case "new", "list", "cleanup":
+			case "new", "switch", "list", "cleanup":
 				worktreeCommands = append(worktreeCommands, c.Name()+"§"+c.Short)
 			case "init", "config":
 				configCommands = append(configCommands, c.Name()+"§"+c.Short)

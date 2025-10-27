@@ -255,3 +255,155 @@ func TestCreateSessionWithManyPaneCommands(t *testing.T) {
 		t.Logf("Failed to close window: %v", err)
 	}
 }
+
+// TestWindowExists tests checking if a window exists
+func TestWindowExists(t *testing.T) {
+	if !IsInTmux() {
+		t.Skip("Not in a tmux session, skipping test")
+	}
+
+	// Test with non-existent window
+	exists, err := WindowExists("nonexistent-worktree-12345")
+	if err != nil {
+		t.Errorf("WindowExists() error: %v", err)
+	}
+	if exists {
+		t.Error("Expected WindowExists to return false for non-existent window")
+	}
+}
+
+// TestWindowExistsWithContext tests checking if a window exists with context
+func TestWindowExistsWithContext(t *testing.T) {
+	if !IsInTmux() {
+		t.Skip("Not in a tmux session, skipping test")
+	}
+
+	ctx := context.Background()
+
+	// Test with non-existent window
+	exists, err := WindowExistsWithContext(ctx, "nonexistent-worktree-ctx-12345")
+	if err != nil {
+		t.Errorf("WindowExistsWithContext() error: %v", err)
+	}
+	if exists {
+		t.Error("Expected WindowExistsWithContext to return false for non-existent window")
+	}
+
+	// Test cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	_, err = WindowExistsWithContext(ctx, "test-worktree")
+	if err == nil {
+		// Note: The command might complete before cancellation is detected
+		t.Log("Command completed before cancellation (this is okay)")
+	}
+}
+
+// TestSwitchToWindow tests switching to a window
+func TestSwitchToWindow(t *testing.T) {
+	if !IsInTmux() {
+		t.Skip("Not in a tmux session, skipping test")
+	}
+
+	// Test with non-existent window should error
+	err := SwitchToWindow("nonexistent-worktree-switch-12345")
+	if err == nil {
+		t.Error("Expected error when switching to non-existent window")
+	}
+
+	expectedErrorMsg := "no tmux window found for worktree:"
+	if err != nil && !contains(err.Error(), expectedErrorMsg) {
+		t.Errorf("Expected error to contain %q, got: %v", expectedErrorMsg, err)
+	}
+}
+
+// TestSwitchToWindowWithContext tests switching to a window with context
+func TestSwitchToWindowWithContext(t *testing.T) {
+	if !IsInTmux() {
+		t.Skip("Not in a tmux session, skipping test")
+	}
+
+	ctx := context.Background()
+
+	// Test with non-existent window should error
+	err := SwitchToWindowWithContext(ctx, "nonexistent-worktree-ctx-switch-12345")
+	if err == nil {
+		t.Error("Expected error when switching to non-existent window")
+	}
+}
+
+// TestFindWindowByWorktree tests the helper function
+func TestFindWindowByWorktree(t *testing.T) {
+	if !IsInTmux() {
+		t.Skip("Not in a tmux session, skipping test")
+	}
+
+	ctx := context.Background()
+
+	// Test with non-existent window
+	index, name, err := findWindowByWorktree(ctx, "nonexistent-worktree-find-12345")
+	if err != nil {
+		t.Errorf("findWindowByWorktree() error: %v", err)
+	}
+	if index != "" || name != "" {
+		t.Errorf("Expected empty strings for non-existent window, got index=%q, name=%q", index, name)
+	}
+}
+
+// TestWindowExistsAfterCreation tests that WindowExists returns true after creating a window
+func TestWindowExistsAfterCreation(t *testing.T) {
+	if !IsInTmux() {
+		t.Skip("Not in a tmux session, skipping test")
+	}
+
+	worktreeName := "test-exists-window"
+	cfg := &config.Config{
+		SetupScript:  "",
+		PaneCommands: []string{},
+	}
+
+	// Create the window
+	ctx := context.Background()
+	err := CreateSessionWithContext(ctx, "test-repo", worktreeName, "/tmp", cfg)
+	if err != nil {
+		t.Fatalf("Failed to create test window: %v", err)
+	}
+
+	// Check that it exists
+	exists, err := WindowExists(worktreeName)
+	if err != nil {
+		t.Errorf("WindowExists() error: %v", err)
+	}
+	if !exists {
+		t.Error("Expected WindowExists to return true for created window")
+	}
+
+	// Cleanup
+	if err := CloseWindow("test-repo", worktreeName); err != nil {
+		t.Logf("Failed to close window: %v", err)
+	}
+
+	// Verify it no longer exists
+	exists, err = WindowExists(worktreeName)
+	if err != nil {
+		t.Errorf("WindowExists() error after cleanup: %v", err)
+	}
+	if exists {
+		t.Error("Expected WindowExists to return false after closing window")
+	}
+}
+
+// Helper function to check if a string contains a substring
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && containsAt(s, substr))
+}
+
+func containsAt(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}

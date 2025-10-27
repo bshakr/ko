@@ -245,35 +245,47 @@ func CreateSessionWithContext(ctx context.Context, repoName, worktreeName, workt
 	return nil
 }
 
-// CloseWindow closes a tmux window by name
-func CloseWindow(_ /* windowName */, worktreeName string) error {
-	ctx := context.Background()
-	// Find the window index with the worktree name
+// findWindowByWorktree returns the window index and name for a given worktree.
+// Returns empty strings if not found. This is a helper function to avoid code duplication.
+func findWindowByWorktree(ctx context.Context, worktreeName string) (index, name string, err error) {
 	cmd := exec.CommandContext(ctx, "tmux", "list-windows", "-F", "#{window_index}:#{window_name}")
 	output, err := cmd.Output()
 	if err != nil {
-		return fmt.Errorf("failed to list tmux windows: %w", err)
+		return "", "", fmt.Errorf("failed to list tmux windows: %w", err)
 	}
 
-	var windowIndex string
 	lines := strings.Split(string(output), "\n")
 	for _, line := range lines {
-		if strings.HasSuffix(line, "|"+worktreeName) {
-			parts := strings.Split(line, ":")
-			if len(parts) > 0 {
-				windowIndex = parts[0]
-				break
+		// Parse the line format: "index:window_name"
+		parts := strings.Split(line, ":")
+		if len(parts) >= 2 {
+			windowName := parts[1]
+			// Expected window name format: "repo-name|worktree-name"
+			// Use exact match on the worktree part to avoid substring issues
+			nameParts := strings.Split(windowName, "|")
+			if len(nameParts) == 2 && nameParts[1] == worktreeName {
+				return parts[0], windowName, nil
 			}
 		}
 	}
+	return "", "", nil
+}
 
-	if windowIndex == "" {
-		return fmt.Errorf("no tmux window found with name: %s", worktreeName)
+// CloseWindow closes a tmux window by name
+func CloseWindow(_ /* windowName */, worktreeName string) error {
+	ctx := context.Background()
+	index, _, err := findWindowByWorktree(ctx, worktreeName)
+	if err != nil {
+		return err
+	}
+
+	if index == "" {
+		return fmt.Errorf("no tmux window found for worktree: %s", worktreeName)
 	}
 
 	// Kill the window
 	//nolint:gosec // G204: tmux commands with validated parameters are safe
-	cmd = exec.CommandContext(ctx, "tmux", "kill-window", "-t", windowIndex)
+	cmd := exec.CommandContext(ctx, "tmux", "kill-window", "-t", index)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to close tmux window: %w", err)
 	}
@@ -338,4 +350,44 @@ func getPaneBaseIndex(ctx context.Context) (int, error) {
 	}
 
 	return baseIndex, nil
+}
+
+// WindowExistsWithContext checks if a tmux window exists for the given worktree name with context support
+func WindowExistsWithContext(ctx context.Context, worktreeName string) (bool, error) {
+	index, _, err := findWindowByWorktree(ctx, worktreeName)
+	if err != nil {
+		return false, err
+	}
+	return index != "", nil
+}
+
+// WindowExists checks if a tmux window exists for the given worktree name
+func WindowExists(worktreeName string) (bool, error) {
+	return WindowExistsWithContext(context.Background(), worktreeName)
+}
+
+// SwitchToWindowWithContext switches to the tmux window for the given worktree name with context support
+func SwitchToWindowWithContext(ctx context.Context, worktreeName string) error {
+	index, _, err := findWindowByWorktree(ctx, worktreeName)
+	if err != nil {
+		return err
+	}
+
+	if index == "" {
+		return fmt.Errorf("no tmux window found for worktree: %s", worktreeName)
+	}
+
+	// Switch to the window
+	//nolint:gosec // G204: tmux commands with validated parameters are safe
+	cmd := exec.CommandContext(ctx, "tmux", "select-window", "-t", index)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to switch to tmux window: %w", err)
+	}
+
+	return nil
+}
+
+// SwitchToWindow switches to the tmux window for the given worktree name
+func SwitchToWindow(worktreeName string) error {
+	return SwitchToWindowWithContext(context.Background(), worktreeName)
 }
