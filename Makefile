@@ -113,9 +113,9 @@ release:
 	@echo "   Opening editor for release notes..."
 	@gh release create "v$(VERSION)" \
 		--title "v$(VERSION)" \
-		--notes-file - \
+		--notes "" \
 		--draft=false \
-		--latest < /dev/tty || { \
+		--latest || { \
 		echo "❌ Failed to create GitHub release"; \
 		echo "   You can create it manually at: https://github.com/bshakr/ko/releases/new?tag=v$(VERSION)"; \
 		exit 1; \
