@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/bshakr/ko/internal/git"
+	"github.com/bshakr/ko/internal/signals"
 	"github.com/bshakr/ko/internal/tmux"
 	"github.com/bshakr/ko/internal/validation"
 	"github.com/spf13/cobra"
@@ -67,9 +67,9 @@ func runCleanup(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid worktree name: %w", err)
 	}
 
-	// Set up context with cancellation for long-running operations
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	// Set up context with cancellation for long-running operations and signal handling
+	ctx, cleanup := signals.SetupCancellableContext()
+	defer cleanup()
 
 	// Get main repository root
 	mainRepoRoot, err := git.GetMainRepoRoot()
