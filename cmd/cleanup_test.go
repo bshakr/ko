@@ -3,7 +3,7 @@ package cmd
 import (
 	"testing"
 
-	"github.com/bshakr/ko/internal/validation"
+	"github.com/bshakr/koh/internal/validation"
 )
 
 func TestWorktreeNameValidationInCleanup(t *testing.T) {
@@ -81,5 +81,5 @@ func TestCleanupAutoDetection(t *testing.T) {
 	// When arg provided -> should use provided name
 
 	t.Log("Cleanup command supports auto-detection of current worktree")
-	t.Log("Run 'ko cleanup' from within a worktree to test this feature")
+	t.Log("Run 'koh cleanup' from within a worktree to test this feature")
 }

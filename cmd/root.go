@@ -1,6 +1,6 @@
-// Package cmd implements the CLI commands for ko.
+// Package cmd implements the CLI commands for koh.
 //
-// Ko is a tool for managing git worktrees with automatic tmux session setup.
+// Koh is a tool for managing git worktrees with automatic tmux session setup.
 // It provides commands to create, list, and clean up worktrees with pre-configured
 // development environments.
 //
@@ -8,7 +8,7 @@
 //   - new: Create a new worktree with a tmux session
 //   - switch: Switch to an existing worktree's tmux session
 //   - cleanup: Remove a worktree and close its tmux session
-//   - list: Display all ko-managed worktrees
+//   - list: Display all koh-managed worktrees
 //   - init: Interactive configuration wizard
 //   - config: Display current configuration
 //
@@ -23,18 +23,18 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bshakr/ko/internal/config"
-	"github.com/bshakr/ko/internal/git"
-	"github.com/bshakr/ko/internal/styles"
+	"github.com/bshakr/koh/internal/config"
+	"github.com/bshakr/koh/internal/git"
+	"github.com/bshakr/koh/internal/styles"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "ko",
+	Use:   "koh",
 	Short: "Git Worktree tmux Automation",
-	Long: `ko - Git Worktree tmux Automation
+	Long: `koh - Git Worktree tmux Automation
 
 A tool for managing git worktrees with automatic tmux session setup.
 Creates isolated development environments with pre-configured panes.`,
@@ -50,12 +50,12 @@ func runRoot(_ *cobra.Command, _ []string) {
 
 	// Print large ASCII title
 	asciiTitle := `
-██╗  ██╗ ██████╗
-██║ ██╔╝██╔═══██╗
-█████╔╝ ██║   ██║
-██╔═██╗ ██║   ██║
-██║  ██╗╚██████╔╝
-╚═╝  ╚═╝ ╚═════╝ `
+██╗  ██╗ ██████╗ ██╗  ██╗
+██║ ██╔╝██╔═══██╗██║  ██║
+█████╔╝ ██║   ██║███████║
+██╔═██╗ ██║   ██║██╔══██║
+██║  ██╗╚██████╔╝██║  ██║
+╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝`
 
 	koTitle := lipgloss.NewStyle().
 		Bold(true).
@@ -94,7 +94,7 @@ func runRoot(_ *cobra.Command, _ []string) {
 		helpMsg := lipgloss.NewStyle().
 			Align(lipgloss.Center).
 			Width(terminalWidth).
-			Render(styles.Muted.Render("Please run ko from within a git repository"))
+			Render(styles.Muted.Render("Please run koh from within a git repository"))
 
 		fmt.Println(errorMsg)
 		fmt.Println(helpMsg)
@@ -123,15 +123,15 @@ func runRoot(_ *cobra.Command, _ []string) {
 
 	// Count worktrees
 	if mainRepoRoot != "" {
-		koDir := filepath.Join(mainRepoRoot, ".ko")
-		if _, err := os.Stat(koDir); err == nil {
+		kohDir := filepath.Join(mainRepoRoot, ".koh")
+		if _, err := os.Stat(kohDir); err == nil {
 			ctx := context.Background()
 			gitCmd := exec.CommandContext(ctx, "git", "worktree", "list")
 			output, err := gitCmd.Output()
 			if err == nil {
 				lines := strings.Split(string(output), "\n")
 				for _, line := range lines {
-					if strings.Contains(line, "/.ko/") {
+					if strings.Contains(line, "/.koh/") {
 						worktreeCount++
 					}
 				}
@@ -198,10 +198,10 @@ func runRoot(_ *cobra.Command, _ []string) {
 		command string
 		desc    string
 	}{
-		{"➜", "ko new <name>", "Create a new worktree"},
-		{"🔄", "ko switch <name>", "Switch to a worktree"},
-		{"📋", "ko list", "View all worktrees"},
-		{"⚙", "ko config", "Show configuration"},
+		{"➜", "koh new <name>", "Create a new worktree"},
+		{"🔄", "koh switch <name>", "Switch to a worktree"},
+		{"📋", "koh list", "View all worktrees"},
+		{"⚙", "koh config", "Show configuration"},
 	}
 
 	// Find max command width for alignment
@@ -267,9 +267,9 @@ func runRoot(_ *cobra.Command, _ []string) {
 		name    string
 		command string
 	}{
-		{"🚀", "Start new feature", "ko new feature-name"},
-		{"📊", "List all worktrees", "ko list"},
-		{"🧹", "Clean up old work", "ko cleanup <name>"},
+		{"🚀", "Start new feature", "koh new feature-name"},
+		{"📊", "List all worktrees", "koh list"},
+		{"🧹", "Clean up old work", "koh cleanup <name>"},
 	}
 
 	// Find max workflow name width for alignment
@@ -367,7 +367,7 @@ func runRoot(_ *cobra.Command, _ []string) {
 				name string
 				desc string
 			}{
-				{"version", "Display ko version"},
+				{"version", "Display koh version"},
 				{"help", "Show help for any command"},
 			},
 		},
@@ -453,11 +453,11 @@ func runRoot(_ *cobra.Command, _ []string) {
 	// Context-aware tip with enhanced styling
 	var tip string
 	if !configExists {
-		tip = "💡 Tip: Run 'ko init' to set up your configuration first"
+		tip = "💡 Tip: Run 'koh init' to set up your configuration first"
 	} else if worktreeCount == 0 {
-		tip = "💡 Tip: Run 'ko new feature-name' to create your first worktree"
+		tip = "💡 Tip: Run 'koh new feature-name' to create your first worktree"
 	} else {
-		tip = "💡 Tip: Use 'ko list' to see all your worktrees"
+		tip = "💡 Tip: Use 'koh list' to see all your worktrees"
 	}
 
 	tipBox := lipgloss.NewStyle().
@@ -589,7 +589,7 @@ func customUsageFunc(cmd *cobra.Command) error {
 		lipgloss.NewStyle().
 			Bold(true).
 			Foreground(styles.Primary).
-			Render("KO - Git Worktree tmux Automation"),
+			Render("KOH - Git Worktree tmux Automation"),
 		terminalWidth,
 	)
 
@@ -747,7 +747,7 @@ func customUsageFunc(cmd *cobra.Command) error {
 	fprintln(out, renderDivider(terminalWidth))
 	fprintln(out)
 
-	tip := "💡 Use \"ko [command] --help\" for more information about a command"
+	tip := "💡 Use \"koh [command] --help\" for more information about a command"
 	tipBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(styles.Warning).

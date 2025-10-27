@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bshakr/ko/internal/config"
-	"github.com/bshakr/ko/internal/styles"
+	"github.com/bshakr/koh/internal/config"
+	"github.com/bshakr/koh/internal/styles"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -15,7 +15,7 @@ import (
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Interactive configuration setup",
-	Long:  `Run an interactive wizard to configure ko settings.`,
+	Long:  `Run an interactive wizard to configure koh settings.`,
 	RunE:  runInit,
 }
 

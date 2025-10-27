@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bshakr/ko/internal/config"
-	"github.com/bshakr/ko/internal/git"
-	"github.com/bshakr/ko/internal/signals"
-	"github.com/bshakr/ko/internal/tmux"
-	"github.com/bshakr/ko/internal/validation"
+	"github.com/bshakr/koh/internal/config"
+	"github.com/bshakr/koh/internal/git"
+	"github.com/bshakr/koh/internal/signals"
+	"github.com/bshakr/koh/internal/tmux"
+	"github.com/bshakr/koh/internal/validation"
 	"github.com/spf13/cobra"
 )
 
@@ -47,10 +47,10 @@ func runNew(_ *cobra.Command, args []string) error {
 	// Check if config exists, if not prompt user to run init
 	exists, err := config.ConfigExists()
 	if err != nil {
-		return fmt.Errorf("failed to check for .koconfig: %w", err)
+		return fmt.Errorf("failed to check for .kohconfig: %w", err)
 	}
 	if !exists {
-		return fmt.Errorf("no .koconfig found\nPlease run 'ko init' to set up your configuration first")
+		return fmt.Errorf("no .kohconfig found\nPlease run 'koh init' to set up your configuration first")
 	}
 
 	// Load configuration
@@ -97,21 +97,21 @@ func runNew(_ *cobra.Command, args []string) error {
 		}
 	}
 
-	// Create .ko directory if it doesn't exist
+	// Create .koh directory if it doesn't exist
 	koDir := filepath.Join(mainRepoRoot, ".ko")
 	//nolint:gosec // G301: 0755 is standard permission for user directories
 	if err := os.MkdirAll(koDir, 0755); err != nil {
-		return fmt.Errorf("failed to create .ko directory: %w", err)
+		return fmt.Errorf("failed to create .koh directory: %w", err)
 	}
 
 	// Check if worktree already exists
 	worktreePath := filepath.Join(koDir, worktreeName)
 	if _, err := os.Stat(worktreePath); err == nil {
-		return fmt.Errorf("worktree .ko/%s already exists", worktreeName)
+		return fmt.Errorf("worktree .koh/%s already exists", worktreeName)
 	}
 
 	// Create git worktree with context
-	fmt.Printf("Creating git worktree: .ko/%s\n", worktreeName)
+	fmt.Printf("Creating git worktree: .koh/%s\n", worktreeName)
 	if err := git.CreateWorktreeWithContext(ctx, worktreePath); err != nil {
 		return fmt.Errorf("failed to create worktree: %w", err)
 	}

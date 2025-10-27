@@ -131,7 +131,7 @@ func GetMainRepoRoot() (string, error) {
 }
 
 // GetCurrentWorktreePath returns the current worktree directory path.
-// This returns the actual worktree directory (e.g., /path/.ko/worktree-name),
+// This returns the actual worktree directory (e.g., /path/.koh/worktree-name),
 // not the .git directory. This is the path shown by "git worktree list".
 func GetCurrentWorktreePath() (string, error) {
 	ctx := context.Background()

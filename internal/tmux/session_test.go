@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bshakr/ko/internal/config"
+	"github.com/bshakr/koh/internal/config"
 )
 
 func TestIsInTmux(t *testing.T) {

@@ -2,11 +2,11 @@
 //
 // # Security Note: Command Injection Trust Model
 //
-// This package executes commands from the user's .koconfig file without sanitization.
+// This package executes commands from the user's .kohconfig file without sanitization.
 // This is intentional and follows these security principles:
 //
 //  1. Configuration is Local and User-Controlled:
-//     - The .koconfig file is stored in the user's repository
+//     - The .kohconfig file is stored in the user's repository
 //     - Users explicitly create and edit this file
 //     - This is equivalent to running shell scripts in the repository
 //
@@ -21,9 +21,9 @@
 //     - If the repository is compromised, the system is already at risk
 //
 //  4. Protection at the Configuration Layer:
-//     - The 'ko init' command shows users exactly what will be executed
+//     - The 'koh init' command shows users exactly what will be executed
 //     - Configuration is human-readable JSON
-//     - Users should review .koconfig before committing
+//     - Users should review .kohconfig before committing
 //
 // WARNING: Do not extend this package to execute commands from:
 // - Network sources
@@ -31,7 +31,7 @@
 // - Untrusted or external configuration sources
 //
 // If this trust model is unacceptable for your use case, review and modify
-// the .koconfig file before using ko commands.
+// the .kohconfig file before using koh commands.
 package tmux
 
 import (
@@ -43,8 +43,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bshakr/ko/internal/config"
-	"github.com/bshakr/ko/internal/git"
+	"github.com/bshakr/koh/internal/config"
+	"github.com/bshakr/koh/internal/git"
 )
 
 // IsInTmux checks if the current session is running inside tmux
@@ -118,7 +118,7 @@ func copyFile(src, dst string) error {
 	// Create destination directory if it doesn't exist
 	dstDir := filepath.Dir(dst)
 	//nolint:gosec // G301: 0755 is standard permission for directories
-	if err := os.MkdirAll(dstDir, 0755); err != nil {
+	if err := os.MkdirAll(dstDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
 
@@ -317,7 +317,7 @@ func sendKeys(pane int, keys string) error {
 
 // sendKeysWithContext sends keys to a specific tmux pane with cancellation support.
 //
-// Security: The 'keys' parameter contains commands from the user's .koconfig file.
+// Security: The 'keys' parameter contains commands from the user's .kohconfig file.
 // These commands are trusted local configuration (see package documentation for
 // the security trust model). The keys are passed to tmux which executes them
 // in the shell context of the pane.

@@ -34,7 +34,7 @@ func TestConfigSaveAndLoad(t *testing.T) {
 	}()
 
 	// Create a test config file path
-	configPath := filepath.Join(tempDir, ".koconfig")
+	configPath := filepath.Join(tempDir, ".kohconfig")
 
 	// Create a test config
 	testConfig := &Config{

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bshakr/ko/internal/validation"
+	"github.com/bshakr/koh/internal/validation"
 )
 
 func TestWorktreeNameValidationInNew(t *testing.T) {
