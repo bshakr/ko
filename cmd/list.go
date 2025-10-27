@@ -52,23 +52,17 @@ func runList(_ *cobra.Command, _ []string) error {
 	}
 
 	// Determine the main repo root (handle being inside a worktree)
-	var mainRepoRoot string
-	var currentWorktreePath string
-	var err error
+	mainRepoRoot, err := git.GetMainRepoRootOrCwd()
+	if err != nil {
+		return fmt.Errorf("failed to get repository root: %w", err)
+	}
 
+	// Get current worktree path if we're in a worktree
+	var currentWorktreePath string
 	if git.IsInWorktree() {
-		mainRepoRoot, err = git.GetMainRepoRoot()
-		if err != nil {
-			return fmt.Errorf("failed to get main repository root: %w", err)
-		}
 		currentWorktreePath, err = git.GetCurrentWorktreePath()
 		if err != nil {
 			return fmt.Errorf("failed to get current worktree path: %w", err)
-		}
-	} else {
-		mainRepoRoot, err = os.Getwd()
-		if err != nil {
-			return fmt.Errorf("failed to get current directory: %w", err)
 		}
 	}
 

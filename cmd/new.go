@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/bshakr/ko/internal/config"
 	"github.com/bshakr/ko/internal/git"
@@ -60,17 +59,9 @@ func runNew(_ *cobra.Command, args []string) error {
 	}
 
 	// Determine the main repo root (handles both main repo and worktrees)
-	var mainRepoRoot string
-	if git.IsInWorktree() {
-		mainRepoRoot, err = git.GetMainRepoRoot()
-		if err != nil {
-			return fmt.Errorf("failed to get main repository root: %w", err)
-		}
-	} else {
-		mainRepoRoot, err = os.Getwd()
-		if err != nil {
-			return fmt.Errorf("failed to get current directory: %w", err)
-		}
+	mainRepoRoot, err := git.GetMainRepoRootOrCwd()
+	if err != nil {
+		return fmt.Errorf("failed to get repository root: %w", err)
 	}
 
 	// Check if setup script exists and is within repository boundaries
@@ -78,17 +69,8 @@ func runNew(_ *cobra.Command, args []string) error {
 		setupPath := filepath.Join(mainRepoRoot, cfg.SetupScript)
 
 		// Validate setup script is within repository (security check)
-		cleanSetupPath, err := filepath.Abs(setupPath)
-		if err != nil {
-			return fmt.Errorf("failed to resolve setup script path: %w", err)
-		}
-		cleanRepoRoot, err := filepath.Abs(mainRepoRoot)
-		if err != nil {
-			return fmt.Errorf("failed to resolve repository root: %w", err)
-		}
-		if !strings.HasPrefix(cleanSetupPath, cleanRepoRoot+string(filepath.Separator)) &&
-			cleanSetupPath != cleanRepoRoot {
-			return fmt.Errorf("setup script must be within repository boundaries\nAttempted path: %s", cfg.SetupScript)
+		if err := validation.ValidatePathWithinRepository(setupPath, mainRepoRoot); err != nil {
+			return fmt.Errorf("setup script %w\nAttempted path: %s", err, cfg.SetupScript)
 		}
 
 		// Check if the script exists

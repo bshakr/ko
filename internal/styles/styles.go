@@ -12,7 +12,10 @@
 package styles
 
 import (
+	"os"
+
 	"github.com/charmbracelet/lipgloss"
+	"golang.org/x/term"
 )
 
 // Base colors using terminal theme colors (ANSI)
@@ -151,4 +154,14 @@ func RenderBox(content string) string {
 // RenderHelp renders text with the Help style.
 func RenderHelp(text string) string {
 	return Help.Render(text)
+}
+
+// GetTerminalWidth returns the current terminal width, defaulting to 80 if unavailable.
+// This is useful for centering and formatting output to fit the terminal.
+func GetTerminalWidth() int {
+	width, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil || width == 0 {
+		return 80
+	}
+	return width
 }

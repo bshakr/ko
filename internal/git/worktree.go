@@ -18,6 +18,7 @@ package git
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -33,13 +34,7 @@ func IsGitRepo() bool {
 
 // CreateWorktree creates a new git worktree at the specified path
 func CreateWorktree(path string) error {
-	ctx := context.Background()
-	cmd := exec.CommandContext(ctx, "git", "worktree", "add", path)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("%s", string(output))
-	}
-	return nil
+	return CreateWorktreeWithContext(context.Background(), path)
 }
 
 // CreateWorktreeWithContext creates a new git worktree at the specified path with cancellation support
@@ -57,13 +52,7 @@ func CreateWorktreeWithContext(ctx context.Context, path string) error {
 
 // RemoveWorktree removes a git worktree at the specified path
 func RemoveWorktree(path string) error {
-	ctx := context.Background()
-	cmd := exec.CommandContext(ctx, "git", "worktree", "remove", "--force", path)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("%s", string(output))
-	}
-	return nil
+	return RemoveWorktreeWithContext(context.Background(), path)
 }
 
 // RemoveWorktreeWithContext removes a git worktree at the specified path with cancellation support
@@ -128,6 +117,21 @@ func GetMainRepoRoot() (string, error) {
 	// The common dir is .git, so we need to go up one level
 	mainRepoRoot := filepath.Dir(commonDir)
 	return mainRepoRoot, nil
+}
+
+// GetMainRepoRootOrCwd returns the main repository root if in a worktree,
+// otherwise returns the current working directory. This is a convenience
+// function that handles both cases for commands that need the repo root.
+func GetMainRepoRootOrCwd() (string, error) {
+	if IsInWorktree() {
+		return GetMainRepoRoot()
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("failed to get current directory: %w", err)
+	}
+	return cwd, nil
 }
 
 // GetCurrentWorktreePath returns the current worktree directory path.

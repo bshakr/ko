@@ -68,3 +68,26 @@ func ValidateWorktreeName(name string) error {
 
 	return nil
 }
+
+// ValidatePathWithinRepository ensures that targetPath is within repoRoot.
+// This prevents path traversal attacks where a user might try to access
+// files outside the repository boundaries.
+func ValidatePathWithinRepository(targetPath, repoRoot string) error {
+	cleanTarget, err := filepath.Abs(targetPath)
+	if err != nil {
+		return fmt.Errorf("failed to resolve target path: %w", err)
+	}
+
+	cleanRoot, err := filepath.Abs(repoRoot)
+	if err != nil {
+		return fmt.Errorf("failed to resolve repository root: %w", err)
+	}
+
+	// Check if target is within root or equal to root
+	if !strings.HasPrefix(cleanTarget, cleanRoot+string(filepath.Separator)) &&
+		cleanTarget != cleanRoot {
+		return fmt.Errorf("path must be within repository boundaries")
+	}
+
+	return nil
+}
