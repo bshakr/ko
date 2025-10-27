@@ -1,16 +1,14 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"github.com/bshakr/ko/internal/config"
 	"github.com/bshakr/ko/internal/git"
+	"github.com/bshakr/ko/internal/signals"
 	"github.com/bshakr/ko/internal/tmux"
 	"github.com/bshakr/ko/internal/validation"
 	"github.com/spf13/cobra"
@@ -37,26 +35,9 @@ func runNew(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid worktree name: %w", err)
 	}
 
-	// Set up context with cancellation for long-running operations
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Handle interrupt signals (Ctrl+C)
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
-	// Signal handler goroutine - properly synchronized
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		<-sigChan
-		fmt.Println("\nOperation cancelled by user")
-		cancel()
-	}()
-	defer func() {
-		signal.Stop(sigChan)
-		<-done // Wait for signal handler to finish
-	}()
+	// Set up context with cancellation for long-running operations and signal handling
+	ctx, cleanup := signals.SetupCancellableContext()
+	defer cleanup()
 
 	// Check if we're in a git repository
 	if !git.IsGitRepo() {
