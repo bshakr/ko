@@ -1,9 +1,9 @@
-.ko/
+.koh/
 .claude/
-ko
+koh
 *.exe
 *.dll
 *.so
 *.dylib
 bin/
-.koconfig
+.kohconfig

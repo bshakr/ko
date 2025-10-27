@@ -1,12 +1,12 @@
 .PHONY: build install clean test help release
 
 # Binary name
-BINARY_NAME=ko
+BINARY_NAME=koh
 INSTALL_PATH=/usr/local/bin
 
 # Version can be overridden at build time: make build VERSION=v1.0.0
 VERSION?=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
-LDFLAGS=-ldflags "-X github.com/bshakr/ko/cmd.Version=$(VERSION)"
+LDFLAGS=-ldflags "-X github.com/bshakr/koh/cmd.Version=$(VERSION)"
 
 # Build the application
 build:
@@ -117,7 +117,7 @@ release:
 		--draft=false \
 		--latest || { \
 		echo "❌ Failed to create GitHub release"; \
-		echo "   You can create it manually at: https://github.com/bshakr/ko/releases/new?tag=v$(VERSION)"; \
+		echo "   You can create it manually at: https://github.com/bshakr/koh/releases/new?tag=v$(VERSION)"; \
 		exit 1; \
 	}
 	@echo ""
@@ -125,8 +125,8 @@ release:
 	@echo ""
 	@echo "📦 Next steps:"
 	@echo "   • GitHub Actions will automatically update the Homebrew formula"
-	@echo "   • Users can install/update with: brew upgrade ko"
-	@echo "   • View release at: https://github.com/bshakr/ko/releases/tag/v$(VERSION)"
+	@echo "   • Users can install/update with: brew upgrade koh"
+	@echo "   • View release at: https://github.com/bshakr/koh/releases/tag/v$(VERSION)"
 
 # Help
 help:

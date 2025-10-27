@@ -1,4 +1,4 @@
-module github.com/bshakr/ko
+module github.com/bshakr/koh
 
 go 1.24.2
 

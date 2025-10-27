@@ -3,7 +3,7 @@ package cmd
 import (
 	"testing"
 
-	"github.com/bshakr/ko/internal/validation"
+	"github.com/bshakr/koh/internal/validation"
 )
 
 func TestWorktreeNameValidationInSwitch(t *testing.T) {

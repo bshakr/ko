@@ -7,10 +7,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/bshakr/ko/internal/git"
-	"github.com/bshakr/ko/internal/signals"
-	"github.com/bshakr/ko/internal/tmux"
-	"github.com/bshakr/ko/internal/validation"
+	"github.com/bshakr/koh/internal/git"
+	"github.com/bshakr/koh/internal/signals"
+	"github.com/bshakr/koh/internal/tmux"
+	"github.com/bshakr/koh/internal/validation"
 	"github.com/spf13/cobra"
 )
 
@@ -83,7 +83,7 @@ func runCleanup(_ *cobra.Command, args []string) error {
 	// Check if worktree exists
 	worktreeExists := true
 	if _, err := os.Stat(worktreePath); os.IsNotExist(err) {
-		fmt.Printf("Warning: Worktree .ko/%s not found\n", worktreeName)
+		fmt.Printf("Warning: Worktree .koh/%s not found\n", worktreeName)
 		fmt.Println("Will attempt to clean up tmux window only")
 		worktreeExists = false
 	}
@@ -119,7 +119,7 @@ func runCleanup(_ *cobra.Command, args []string) error {
 
 	// Step 2: Remove the git worktree
 	if worktreeExists {
-		fmt.Printf("Removing git worktree: .ko/%s\n", worktreeName)
+		fmt.Printf("Removing git worktree: .koh/%s\n", worktreeName)
 		if err := git.RemoveWorktreeWithContext(ctx, worktreePath); err != nil {
 			fmt.Printf("Warning: Failed to remove worktree: %v\n", err)
 		} else {

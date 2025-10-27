@@ -1,4 +1,4 @@
-// Package styles defines consistent styling for ko's terminal UI.
+// Package styles defines consistent styling for koh's terminal UI.
 //
 // This package provides:
 //   - Color palette (Primary, Success, Warning, Error, etc.)

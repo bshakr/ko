@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/bshakr/ko/internal/config"
-	"github.com/bshakr/ko/internal/git"
-	"github.com/bshakr/ko/internal/tmux"
-	"github.com/bshakr/ko/internal/validation"
+	"github.com/bshakr/koh/internal/config"
+	"github.com/bshakr/koh/internal/git"
+	"github.com/bshakr/koh/internal/tmux"
+	"github.com/bshakr/koh/internal/validation"
 	"github.com/spf13/cobra"
 )
 
@@ -56,7 +56,7 @@ func switchToWorktree(worktreeName string, quiet bool) error {
 	worktreePath := filepath.Join(mainRepoRoot, ".ko", worktreeName)
 	if _, err := os.Stat(worktreePath); err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("worktree .ko/%s does not exist\nUse 'ko new %s' to create it", worktreeName, worktreeName)
+			return fmt.Errorf("worktree .koh/%s does not exist\nUse 'koh new %s' to create it", worktreeName, worktreeName)
 		}
 		return fmt.Errorf("failed to check worktree path: %w", err)
 	}
@@ -70,7 +70,7 @@ func switchToWorktree(worktreeName string, quiet bool) error {
 	if exists {
 		// Window exists, just switch to it
 		if !quiet {
-			fmt.Printf("Switching to existing session: .ko/%s\n", worktreeName)
+			fmt.Printf("Switching to existing session: .koh/%s\n", worktreeName)
 		}
 		if err := tmux.SwitchToWindow(worktreeName); err != nil {
 			return fmt.Errorf("failed to switch to tmux window: %w", err)
@@ -80,16 +80,16 @@ func switchToWorktree(worktreeName string, quiet bool) error {
 
 	// Window doesn't exist, create it
 	if !quiet {
-		fmt.Printf("Creating new tmux session for existing worktree: .ko/%s\n", worktreeName)
+		fmt.Printf("Creating new tmux session for existing worktree: .koh/%s\n", worktreeName)
 	}
 
 	// Check if config exists
 	exists, err = config.ConfigExists()
 	if err != nil {
-		return fmt.Errorf("failed to check for .koconfig: %w", err)
+		return fmt.Errorf("failed to check for .kohconfig: %w", err)
 	}
 	if !exists {
-		return fmt.Errorf("no .koconfig found\nPlease run 'ko init' to set up your configuration first")
+		return fmt.Errorf("no .kohconfig found\nPlease run 'koh init' to set up your configuration first")
 	}
 
 	// Load configuration

@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/bshakr/ko/internal/config"
-	"github.com/bshakr/ko/internal/styles"
+	"github.com/bshakr/koh/internal/config"
+	"github.com/bshakr/koh/internal/styles"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 )
@@ -12,7 +12,7 @@ import (
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "View current configuration",
-	Long:  `Display the current ko configuration.`,
+	Long:  `Display the current koh configuration.`,
 	RunE:  runConfig,
 }
 
@@ -79,7 +79,7 @@ func runConfig(_ *cobra.Command, _ []string) error {
 	help := lipgloss.NewStyle().
 		Align(lipgloss.Center).
 		Width(terminalWidth).
-		Render(styles.RenderHelp("Run 'ko init' to change configuration interactively"))
+		Render(styles.RenderHelp("Run 'koh init' to change configuration interactively"))
 	fmt.Println(help + "\n")
 
 	return nil

@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bshakr/ko/internal/git"
-	"github.com/bshakr/ko/internal/styles"
-	"github.com/bshakr/ko/internal/tmux"
+	"github.com/bshakr/koh/internal/git"
+	"github.com/bshakr/koh/internal/styles"
+	"github.com/bshakr/koh/internal/tmux"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
@@ -18,8 +18,8 @@ import (
 
 var listCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all ko worktrees",
-	Long:  `List all git worktrees in the .ko directory. Use arrow keys or j/k to navigate, g/G to jump, Enter to switch, q to quit.`,
+	Short: "List all koh worktrees",
+	Long:  `List all git worktrees in the .koh directory. Use arrow keys or j/k to navigate, g/G to jump, Enter to switch, q to quit.`,
 	RunE:  runList,
 }
 
@@ -66,14 +66,14 @@ func runList(_ *cobra.Command, _ []string) error {
 		}
 	}
 
-	// Check if .ko directory exists
+	// Check if .koh directory exists
 	koDir := filepath.Join(mainRepoRoot, ".ko")
 	if _, err := os.Stat(koDir); err != nil {
 		if os.IsNotExist(err) {
-			fmt.Println(styles.Muted.Render("No worktrees found (no .ko directory)"))
+			fmt.Println(styles.Muted.Render("No worktrees found (no .koh directory)"))
 			return nil
 		}
-		return fmt.Errorf("failed to check .ko directory: %w", err)
+		return fmt.Errorf("failed to check .koh directory: %w", err)
 	}
 
 	// List git worktrees
@@ -88,7 +88,7 @@ func runList(_ *cobra.Command, _ []string) error {
 	var worktrees []worktreeItem
 
 	for _, line := range lines {
-		if strings.Contains(line, "/.ko/") {
+		if strings.Contains(line, "/.koh/") {
 			// Extract worktree name and branch
 			parts := strings.Fields(line)
 			if len(parts) >= 3 {
@@ -108,7 +108,7 @@ func runList(_ *cobra.Command, _ []string) error {
 	}
 
 	if len(worktrees) == 0 {
-		fmt.Println(styles.Muted.Render("No ko worktrees found"))
+		fmt.Println(styles.Muted.Render("No koh worktrees found"))
 		return nil
 	}
 
@@ -228,7 +228,7 @@ func (m listModel) View() string {
 			// Current session in green text (no background)
 			greenStyle := lipgloss.NewStyle().
 				Bold(true).
-				Foreground(lipgloss.Color("2"))  // Green
+				Foreground(lipgloss.Color("2")) // Green
 
 			icon := greenStyle.Render(styles.IconCurrent)
 			nameStyled := greenStyle.Render(wt.name)

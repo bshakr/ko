@@ -1,14 +1,14 @@
-// Package config handles ko configuration file management.
+// Package config handles koh configuration file management.
 //
-// Configuration is stored in a .koconfig file at the repository root.
+// Configuration is stored in a .kohconfig file at the repository root.
 // The configuration includes:
 //   - setup_script: Path to a script that runs when creating a worktree
 //   - pane_commands: Commands to run in additional tmux panes
 //
 // The configuration file is JSON-formatted and can be created interactively
-// using the 'ko init' command or edited manually.
+// using the 'koh init' command or edited manually.
 //
-// Example .koconfig:
+// Example .kohconfig:
 //
 //	{
 //	  "setup_script": "./bin/setup",
@@ -27,10 +27,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bshakr/ko/internal/git"
+	"github.com/bshakr/koh/internal/git"
 )
 
-// Config represents the ko configuration
+// Config represents the koh configuration
 type Config struct {
 	SetupScript  string   `json:"setup_script"`
 	PaneCommands []string `json:"pane_commands"`
@@ -44,7 +44,7 @@ func DefaultConfig() *Config {
 	}
 }
 
-// ConfigPath returns the path to the .koconfig file in the repo root
+// ConfigPath returns the path to the .kohconfig file in the repo root
 //
 //nolint:revive // config.ConfigPath() is clear and explicit
 func ConfigPath() (string, error) {
@@ -69,10 +69,10 @@ func ConfigPath() (string, error) {
 		}
 	}
 
-	return filepath.Join(repoRoot, ".koconfig"), nil
+	return filepath.Join(repoRoot, ".kohconfig"), nil
 }
 
-// ConfigExists checks if a .koconfig file exists in the repo
+// ConfigExists checks if a .kohconfig file exists in the repo
 //
 //nolint:revive // config.ConfigExists() is clear and explicit
 func ConfigExists() (bool, error) {
@@ -101,7 +101,7 @@ func Load() (*Config, error) {
 
 	// If config doesn't exist, return an error
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("no .koconfig found - run 'ko init' to set up configuration")
+		return nil, fmt.Errorf("no .kohconfig found - run 'koh init' to set up configuration")
 	}
 
 	//nolint:gosec // G304: Reading config file from validated path is expected
@@ -137,13 +137,13 @@ func (c *Config) Save() error {
 	return nil
 }
 
-// Setup runs an interactive setup to create a .koconfig file
-// Note: This is a simple fallback. Use 'ko init' for the full interactive wizard.
+// Setup runs an interactive setup to create a .kohconfig file
+// Note: This is a simple fallback. Use 'koh init' for the full interactive wizard.
 func Setup() error {
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Println("Ko Configuration Setup")
-	fmt.Println("======================")
+	fmt.Println("Koh Configuration Setup")
+	fmt.Println("=======================")
 	fmt.Println()
 
 	config := DefaultConfig()
