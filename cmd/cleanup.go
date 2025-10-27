@@ -39,7 +39,7 @@ func extractWorkTreeName() (string, error) {
 		return "", fmt.Errorf("failed to get current worktree path: %w", err)
 	}
 
-	return filepath.Base(filepath.Dir(currentPath)), nil
+	return filepath.Base(currentPath), nil
 }
 
 func runCleanup(_ *cobra.Command, args []string) error {
@@ -52,7 +52,8 @@ func runCleanup(_ *cobra.Command, args []string) error {
 
 	// If no argument provided, try to detect current worktree
 	if len(args) == 0 {
-		worktreeName, err := extractWorkTreeName()
+		var err error
+		worktreeName, err = extractWorkTreeName()
 		if err != nil {
 			return fmt.Errorf("failed to extract worktree name: %w", err)
 		}
