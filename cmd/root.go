@@ -28,7 +28,6 @@ import (
 	"github.com/bshakr/ko/internal/styles"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 )
 
 var rootCmd = &cobra.Command{
@@ -43,10 +42,7 @@ Creates isolated development environments with pre-configured panes.`,
 
 func runRoot(_ *cobra.Command, _ []string) {
 	// Get actual terminal width
-	terminalWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil || terminalWidth == 0 {
-		terminalWidth = 80 // fallback to default
-	}
+	terminalWidth := styles.GetTerminalWidth()
 
 	// Print large ASCII title
 	asciiTitle := `
@@ -578,10 +574,7 @@ func renderCommandLine(cmdName, cmdDesc string, cmdWidth, maxLineLen, terminalWi
 // customUsageFunc provides custom help/usage formatting
 func customUsageFunc(cmd *cobra.Command) error {
 	// Get actual terminal width
-	terminalWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil || terminalWidth == 0 {
-		terminalWidth = 80
-	}
+	terminalWidth := styles.GetTerminalWidth()
 
 	// Header with decorative border
 	border := renderBorder(terminalWidth)

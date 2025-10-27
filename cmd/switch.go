@@ -47,18 +47,9 @@ func switchToWorktree(worktreeName string, quiet bool) error {
 	}
 
 	// Determine the main repo root
-	var mainRepoRoot string
-	var err error
-	if git.IsInWorktree() {
-		mainRepoRoot, err = git.GetMainRepoRoot()
-		if err != nil {
-			return fmt.Errorf("failed to get main repository root: %w", err)
-		}
-	} else {
-		mainRepoRoot, err = os.Getwd()
-		if err != nil {
-			return fmt.Errorf("failed to get current directory: %w", err)
-		}
+	mainRepoRoot, err := git.GetMainRepoRootOrCwd()
+	if err != nil {
+		return fmt.Errorf("failed to get repository root: %w", err)
 	}
 
 	// Check if worktree exists

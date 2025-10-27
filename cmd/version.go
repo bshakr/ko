@@ -2,12 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/bshakr/ko/internal/styles"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 )
 
 // Version is the current version of ko
@@ -28,10 +26,7 @@ func init() {
 
 func runVersion(cmd *cobra.Command, args []string) error {
 	// Get terminal width
-	terminalWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil || terminalWidth == 0 {
-		terminalWidth = 80
-	}
+	terminalWidth := styles.GetTerminalWidth()
 
 	// Create version display
 	versionText := fmt.Sprintf("ko version %s", Version)

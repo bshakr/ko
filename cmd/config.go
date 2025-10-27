@@ -2,13 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/bshakr/ko/internal/config"
 	"github.com/bshakr/ko/internal/styles"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 )
 
 var configCmd = &cobra.Command{
@@ -24,10 +22,7 @@ func init() {
 
 func runConfig(_ *cobra.Command, _ []string) error {
 	// Get terminal width
-	terminalWidth, _, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil || terminalWidth == 0 {
-		terminalWidth = 80
-	}
+	terminalWidth := styles.GetTerminalWidth()
 
 	cfg, err := config.Load()
 	if err != nil {
