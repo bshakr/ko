@@ -42,6 +42,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/bshakr/koh/internal/config"
 	"github.com/bshakr/koh/internal/git"
@@ -271,7 +272,38 @@ func findWindowByWorktree(ctx context.Context, worktreeName string) (index, name
 	return "", "", nil
 }
 
-// CloseWindow closes a tmux window by name
+// getPanesForWindow returns all pane IDs for a given window index
+func getPanesForWindow(ctx context.Context, windowIndex string) ([]string, error) {
+	cmd := exec.CommandContext(ctx, "tmux", "list-panes", "-t", windowIndex, "-F", "#{pane_id}")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list panes for window %s: %w", windowIndex, err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	var panes []string
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			panes = append(panes, line)
+		}
+	}
+	return panes, nil
+}
+
+// sendCtrlCToPane sends Ctrl-C (SIGINT) to a specific pane
+func sendCtrlCToPane(ctx context.Context, paneID string) error {
+	//nolint:gosec // G204: tmux commands with validated parameters are safe
+	cmd := exec.CommandContext(ctx, "tmux", "send-keys", "-t", paneID, "C-c")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to send Ctrl-C to pane %s: %w", paneID, err)
+	}
+	return nil
+}
+
+// CloseWindow closes a tmux window by name.
+// Note: Uses context.Background() to ensure cleanup completes even if caller's context is cancelled.
+// This is intentional - we want the window and its processes to be properly cleaned up.
 func CloseWindow(_ /* windowName */, worktreeName string) error {
 	ctx := context.Background()
 	index, _, err := findWindowByWorktree(ctx, worktreeName)
@@ -281,6 +313,27 @@ func CloseWindow(_ /* windowName */, worktreeName string) error {
 
 	if index == "" {
 		return fmt.Errorf("no tmux window found for worktree: %s", worktreeName)
+	}
+
+	// Get all panes in the window
+	panes, err := getPanesForWindow(ctx, index)
+	if err != nil {
+		return fmt.Errorf("failed to get panes for window: %w", err)
+	}
+
+	// Send Ctrl-C to each pane to gracefully terminate processes
+	for _, paneID := range panes {
+		if err := sendCtrlCToPane(ctx, paneID); err != nil {
+			// Log the error but continue with other panes
+			fmt.Fprintf(os.Stderr, "Warning: failed to send Ctrl-C to pane %s in window %s: %v\n", paneID, index, err)
+		}
+	}
+
+	// Wait a moment for processes to terminate gracefully
+	if len(panes) > 0 {
+		// Wait 500ms for processes to handle Ctrl-C
+		// This is a reasonable balance between responsiveness and giving processes time to exit
+		time.Sleep(500 * time.Millisecond)
 	}
 
 	// Kill the window
