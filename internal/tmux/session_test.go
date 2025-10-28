@@ -394,6 +394,163 @@ func TestWindowExistsAfterCreation(t *testing.T) {
 	}
 }
 
+// TestGetPanesForWindow tests getting pane IDs for a window
+func TestGetPanesForWindow(t *testing.T) {
+	if !IsInTmux() {
+		t.Skip("Not in a tmux session, skipping test")
+	}
+
+	worktreeName := "test-get-panes"
+	cfg := &config.Config{
+		SetupScript:  "",
+		PaneCommands: []string{"echo 'pane 1'", "echo 'pane 2'"},
+	}
+
+	// Create a window with multiple panes
+	ctx := context.Background()
+	err := CreateSessionWithContext(ctx, "test-repo", worktreeName, "/tmp", cfg)
+	if err != nil {
+		t.Fatalf("Failed to create test window: %v", err)
+	}
+
+	// Get the window index
+	index, _, err := findWindowByWorktree(ctx, worktreeName)
+	if err != nil {
+		t.Fatalf("Failed to find window: %v", err)
+	}
+
+	// Get panes for the window
+	panes, err := getPanesForWindow(ctx, index)
+	if err != nil {
+		t.Errorf("getPanesForWindow() error: %v", err)
+	}
+
+	// We should have 3 panes (setup + 2 commands)
+	expectedPanes := 3
+	if len(panes) != expectedPanes {
+		t.Errorf("Expected %d panes, got %d", expectedPanes, len(panes))
+	}
+
+	// Verify each pane ID starts with % (tmux pane ID format)
+	for i, paneID := range panes {
+		if len(paneID) == 0 || paneID[0] != '%' {
+			t.Errorf("Pane %d has invalid ID format: %q", i, paneID)
+		}
+	}
+
+	// Cleanup
+	if err := CloseWindow("test-repo", worktreeName); err != nil {
+		t.Logf("Failed to close window: %v", err)
+	}
+}
+
+// TestSendCtrlCToPane tests sending Ctrl-C to a pane
+func TestSendCtrlCToPane(t *testing.T) {
+	if !IsInTmux() {
+		t.Skip("Not in a tmux session, skipping test")
+	}
+
+	worktreeName := "test-ctrl-c"
+	cfg := &config.Config{
+		SetupScript:  "",
+		PaneCommands: []string{},
+	}
+
+	// Create a window with one pane
+	ctx := context.Background()
+	err := CreateSessionWithContext(ctx, "test-repo", worktreeName, "/tmp", cfg)
+	if err != nil {
+		t.Fatalf("Failed to create test window: %v", err)
+	}
+
+	// Get the window index and panes
+	index, _, err := findWindowByWorktree(ctx, worktreeName)
+	if err != nil {
+		t.Fatalf("Failed to find window: %v", err)
+	}
+
+	panes, err := getPanesForWindow(ctx, index)
+	if err != nil {
+		t.Fatalf("Failed to get panes: %v", err)
+	}
+
+	if len(panes) == 0 {
+		t.Fatal("Expected at least one pane")
+	}
+
+	// Send Ctrl-C to the first pane
+	err = sendCtrlCToPane(ctx, panes[0])
+	if err != nil {
+		t.Errorf("sendCtrlCToPane() error: %v", err)
+	}
+
+	// Cleanup
+	if err := CloseWindow("test-repo", worktreeName); err != nil {
+		t.Logf("Failed to close window: %v", err)
+	}
+}
+
+// TestGetPanesForWindowNonExistent tests error handling for non-existent window
+func TestGetPanesForWindowNonExistent(t *testing.T) {
+	if !IsInTmux() {
+		t.Skip("Not in a tmux session, skipping test")
+	}
+
+	ctx := context.Background()
+	// Use a very high window index that should not exist
+	panes, err := getPanesForWindow(ctx, "999999")
+	if err == nil {
+		t.Error("Expected error for non-existent window, got nil")
+	}
+	if len(panes) != 0 {
+		t.Errorf("Expected 0 panes for non-existent window, got %d", len(panes))
+	}
+}
+
+// TestCloseWindowWithCtrlC tests that CloseWindow sends Ctrl-C before killing
+func TestCloseWindowWithCtrlC(t *testing.T) {
+	if !IsInTmux() {
+		t.Skip("Not in a tmux session, skipping test")
+	}
+
+	worktreeName := "test-close-with-ctrl-c"
+	cfg := &config.Config{
+		SetupScript:  "",
+		PaneCommands: []string{"sleep 10", "sleep 20"},
+	}
+
+	// Create a window with panes running sleep commands
+	ctx := context.Background()
+	err := CreateSessionWithContext(ctx, "test-repo", worktreeName, "/tmp", cfg)
+	if err != nil {
+		t.Fatalf("Failed to create test window: %v", err)
+	}
+
+	// Verify window exists
+	exists, err := WindowExists(worktreeName)
+	if err != nil {
+		t.Fatalf("WindowExists() error: %v", err)
+	}
+	if !exists {
+		t.Fatal("Window should exist after creation")
+	}
+
+	// Close the window (should send Ctrl-C to all panes before killing)
+	err = CloseWindow("test-repo", worktreeName)
+	if err != nil {
+		t.Errorf("CloseWindow() error: %v", err)
+	}
+
+	// Verify window no longer exists
+	exists, err = WindowExists(worktreeName)
+	if err != nil {
+		t.Errorf("WindowExists() error after close: %v", err)
+	}
+	if exists {
+		t.Error("Window should not exist after closing")
+	}
+}
+
 // Helper function to check if a string contains a substring
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && containsAt(s, substr))
