@@ -1,0 +1,44 @@
+name: Update Homebrew Tap
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-tap:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+
+      - name: Get release information
+        id: release
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+
+          # Get the commit SHA for this tag
+          COMMIT_SHA=$(git rev-parse $TAG_NAME)
+          echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+
+          echo "Release tag: $TAG_NAME"
+          echo "Commit SHA: $COMMIT_SHA"
+
+      - name: Trigger homebrew-koh repository update
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.TAP_UPDATE_TOKEN }}" \
+            https://api.github.com/repos/bshakr/homebrew-koh/dispatches \
+            -d '{
+              "event_type": "update-formula",
+              "client_payload": {
+                "tag": "${{ steps.release.outputs.tag }}",
+                "sha": "${{ steps.release.outputs.sha }}"
+              }
+            }'
