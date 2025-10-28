@@ -1,8 +1,10 @@
-# koh 
+# koh
+
 ## git worktree tmux automation
 
 `koh` is a CLI tool written in Go that creates git worktrees and sets up a configurable development environment with a single command.
 ![screenshot](./assets/screenshot.png)
+
 ## What it does
 
 ### `koh new <worktree-name>`
@@ -32,7 +34,8 @@ Cleans up after you're done:
 ### Homebrew (recommended)
 
 ```bash
-brew install bshakr/koh/koh
+brew tap bshakr/koh
+brew install koh
 ```
 
 ### Building from source
@@ -65,17 +68,20 @@ koh new <worktree-name>
 ```
 
 Example:
+
 ```bash
 koh new feature-auth
 ```
 
 This will:
+
 - Create a worktree at `.koh/feature-auth`
 - Set up your configured tmux environment with panes running your specified commands
 
 ### Normal development workflow
 
 Once your session is set up:
+
 1. Work in your configured environment (editor, dev server, etc.)
 2. Make commits as normal
 3. Push your branch and create a PR when ready
@@ -89,6 +95,7 @@ koh cleanup feature-auth
 ```
 
 This will:
+
 - Close the tmux window with all its panes
 - Remove the git worktree
 
@@ -127,11 +134,11 @@ You may want to add `.koh/` to your `.gitignore` file.
 ## Configuration
 
 Before creating your first worktree, run `koh init` to set up your configuration. The tool will prompt you for:
+
 - Path to your setup script (if you have one)
 - Additional commands to run in tmux panes
 
 The configuration is stored in `.kohconfig` at your repository root and can be updated anytime with `koh init`.
-
 
 ## Contributing
 
