@@ -12,9 +12,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-tags: true
+        uses: actions/checkout@v5
 
       - name: Get release information
         id: release
