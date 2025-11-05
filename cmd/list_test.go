@@ -249,7 +249,7 @@ func TestListModelView(t *testing.T) {
 	if view == "" {
 		t.Error("Expected non-empty view")
 	}
-	if !contains(view, "Ko Worktrees") {
+	if !contains(view, "Koh Worktrees") {
 		t.Error("Expected view to contain title")
 	}
 	if !contains(view, "test1") {

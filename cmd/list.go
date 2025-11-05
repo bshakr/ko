@@ -67,7 +67,7 @@ func runList(_ *cobra.Command, _ []string) error {
 	}
 
 	// Check if .koh directory exists
-	koDir := filepath.Join(mainRepoRoot, ".ko")
+	koDir := filepath.Join(mainRepoRoot, ".koh")
 	if _, err := os.Stat(koDir); err != nil {
 		if os.IsNotExist(err) {
 			fmt.Println(styles.Muted.Render("No worktrees found (no .koh directory)"))
@@ -213,7 +213,7 @@ func (m listModel) View() string {
 	var s strings.Builder
 
 	// Title
-	title := styles.RenderTitle(styles.IconTree + " Ko Worktrees")
+	title := styles.RenderTitle(styles.IconTree + " Koh Worktrees")
 	s.WriteString("\n" + title + "\n\n")
 
 	// Worktrees list
