@@ -146,4 +146,4 @@ Feel free to submit issues or pull requests!
 
 ## License
 
-MIT
+[MIT](LICENSE)
