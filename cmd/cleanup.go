@@ -78,7 +78,7 @@ func runCleanup(_ *cobra.Command, args []string) error {
 	}
 
 	// Build worktree path
-	worktreePath := filepath.Join(mainRepoRoot, ".ko", worktreeName)
+	worktreePath := filepath.Join(mainRepoRoot, ".koh", worktreeName)
 
 	// Check if worktree exists
 	worktreeExists := true

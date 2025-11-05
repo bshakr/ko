@@ -156,7 +156,7 @@ func (m initModel) View() string {
 		Bold(true).
 		Foreground(styles.Primary).
 		MarginBottom(1).
-		Render(styles.IconConfig + " Ko Configuration Setup")
+		Render(styles.IconConfig + " Koh Configuration Setup")
 	b.WriteString("\n" + title + "\n\n")
 
 	switch m.step {

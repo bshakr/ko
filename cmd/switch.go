@@ -53,7 +53,7 @@ func switchToWorktree(worktreeName string, quiet bool) error {
 	}
 
 	// Check if worktree exists
-	worktreePath := filepath.Join(mainRepoRoot, ".ko", worktreeName)
+	worktreePath := filepath.Join(mainRepoRoot, ".koh", worktreeName)
 	if _, err := os.Stat(worktreePath); err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("worktree .koh/%s does not exist\nUse 'koh new %s' to create it", worktreeName, worktreeName)

@@ -80,7 +80,7 @@ func runNew(_ *cobra.Command, args []string) error {
 	}
 
 	// Create .koh directory if it doesn't exist
-	koDir := filepath.Join(mainRepoRoot, ".ko")
+	koDir := filepath.Join(mainRepoRoot, ".koh")
 	//nolint:gosec // G301: 0755 is standard permission for user directories
 	if err := os.MkdirAll(koDir, 0755); err != nil {
 		return fmt.Errorf("failed to create .koh directory: %w", err)
